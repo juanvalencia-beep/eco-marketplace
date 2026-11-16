@@ -6,6 +6,10 @@ Databases course project. Team: Jonatan Vazques, Juan Valencia, David Guanoluisa
 
 The system manages a small network of stores that sell eco-friendly products in bulk (detergent, oats, rice, shampoo...). It keeps the product catalog, the stock of each product in each store, the registered customers with their eco-points, and the refill orders.
 
+Online demo: https://ecomarketplace.vercel.app
+
+The online version uses SQLite in the temporary folder of Vercel and loads the sample data when it starts, so the changes made there are not permanent.
+
 ## Structure
 
 ```
@@ -18,6 +22,8 @@ static/          the GUI (HTML, CSS and JavaScript)
 tests/           test cases (database and API)
 docs/API.md      list of all the endpoints
 docs/report/     LaTeX source of the project advance report
+index.py         entry point for Vercel
+vercel.json      Vercel configuration
 ```
 
 ## Database

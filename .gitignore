@@ -13,3 +13,5 @@ venv/
 *.out
 *.toc
 *.synctex.gz
+
+.vercel
