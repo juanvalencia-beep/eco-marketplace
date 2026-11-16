@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eco-Marketplace Admin</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <strong>Eco-Marketplace</strong>
+      <span>Refill stations admin</span>
+    </div>
+    <nav class="nav">
+      <a href="#dashboard" data-section="dashboard">Dashboard</a>
+      <a href="#customers" data-section="customers">Customers</a>
+      <a href="#stores" data-section="stores">Stores</a>
+      <a href="#products" data-section="products">Products</a>
+      <a href="#inventory" data-section="inventory">Inventory</a>
+      <a href="#orders" data-section="orders">Orders</a>
+    </nav>
+    <p class="sidebar-note">Databases course project</p>
+  </aside>
+
+  <main class="content">
+    <div id="message" class="message" hidden>
+      <span id="message-text"></span>
+      <button type="button" id="message-close" class="message-close" aria-label="Close">&times;</button>
+    </div>
+
+    <!-- Dashboard -->
+    <section id="section-dashboard" class="section">
+      <h1>Dashboard</h1>
+      <div class="cards">
+        <div class="card"><span class="card-label">Customers</span><span class="card-value" id="count-clientes">-</span></div>
+        <div class="card"><span class="card-label">Stores</span><span class="card-value" id="count-tiendas">-</span></div>
+        <div class="card"><span class="card-label">Products</span><span class="card-value" id="count-productos">-</span></div>
+        <div class="card"><span class="card-label">Orders</span><span class="card-value" id="count-pedidos">-</span></div>
+        <div class="card card-warn"><span class="card-label">Low stock items</span><span class="card-value" id="count-stock_bajo">-</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Low stock alert</h2>
+          <span class="muted">Inventory rows with less than 10 units in stock</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Store</th><th>Product</th><th class="num">Stock</th><th>Unit</th></tr>
+            </thead>
+            <tbody id="lowstock-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customers -->
+    <section id="section-customers" class="section" hidden>
+      <h1>Customers</h1>
+      <form id="customer-form" class="panel form-row">
+        <label>Full name <input name="nombre_completo" required maxlength="100"></label>
+        <label>Email <input name="correo_electronico" type="email" required maxlength="120"></label>
+        <button type="submit" class="btn btn-primary">Add customer</button>
+      </form>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Customer list</h2>
+          <input id="customer-search" type="search" placeholder="Search by name or email" class="search">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Name</th><th>Email</th><th class="num">Eco-points</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody id="customers-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stores -->
+    <section id="section-stores" class="section" hidden>
+      <h1>Stores</h1>
+      <form id="store-form" class="panel form-row">
+        <label>Branch name <input name="nombre_sucursal" required maxlength="100"></label>
+        <label class="grow">Address <input name="direccion" required maxlength="200"></label>
+        <button type="submit" class="btn btn-primary">Add store</button>
+      </form>
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Branch name</th><th>Address</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody id="stores-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Products -->
+    <section id="section-products" class="section" hidden>
+      <h1>Products</h1>
+      <form id="product-form" class="panel form-row">
+        <label class="grow">Name <input name="nombre" required maxlength="100"></label>
+        <label>Unit <input name="unidad_medida" required maxlength="20" list="unit-options" placeholder="liters, grams..."></label>
+        <button type="submit" class="btn btn-primary">Add product</button>
+      </form>
+      <datalist id="unit-options">
+        <option value="liters"></option>
+        <option value="milliliters"></option>
+        <option value="grams"></option>
+        <option value="kilograms"></option>
+      </datalist>
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Name</th><th>Unit</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody id="products-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inventory -->
+    <section id="section-inventory" class="section" hidden>
+      <h1>Inventory</h1>
+      <form id="inventory-form" class="panel form-row">
+        <label>Store <select name="tienda_id" class="store-select" required></select></label>
+        <label>Product <select name="producto_id" class="product-select" required></select></label>
+        <label>Quantity <input name="cantidad_stock" type="number" min="0" step="0.01" required></label>
+        <button type="submit" class="btn btn-primary">Add to inventory</button>
+      </form>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Stock per store</h2>
+          <label class="inline-label">Store
+            <select id="inventory-filter"></select>
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Store</th><th>Product</th><th class="num">Stock</th><th>Unit</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody id="inventory-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Orders -->
+    <section id="section-orders" class="section" hidden>
+      <h1>Orders</h1>
+      <form id="order-form" class="panel">
+        <h2>New refill order</h2>
+        <div class="form-row">
+          <label>Customer <select name="cliente_id" id="order-customer" required></select></label>
+          <label>Store <select name="tienda_id" id="order-store" class="store-select" required></select></label>
+          <label>Product <select name="producto_id" id="order-product" class="product-select" required></select></label>
+          <label>Quantity
+            <span class="with-unit">
+              <input name="cantidad_comprada" id="order-qty" type="number" min="0.01" step="0.01" required>
+              <span id="order-unit" class="unit"></span>
+            </span>
+          </label>
+          <button type="submit" class="btn btn-primary">Register order</button>
+        </div>
+        <p id="order-hint" class="hint"></p>
+        <div id="order-result" class="order-result" hidden></div>
+      </form>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>All orders</h2>
+          <span class="muted">Newest first</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Date</th><th>Customer</th><th>Store</th><th>Product</th><th class="num">Quantity</th><th class="num">Points</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody id="orders-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="edit-dialog">
+  <form id="edit-form">
+    <h2 id="edit-title">Edit</h2>
+    <div id="edit-fields"></div>
+    <p id="edit-error" class="dialog-error" hidden></p>
+    <div class="dialog-buttons">
+      <button type="button" class="btn" id="edit-cancel">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirm-dialog">
+  <form method="dialog">
+    <h2>Are you sure?</h2>
+    <p id="confirm-text"></p>
+    <div class="dialog-buttons">
+      <button value="no" class="btn">Cancel</button>
+      <button value="yes" class="btn btn-danger" id="confirm-yes">Yes, continue</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="history-dialog" class="wide">
+  <h2 id="history-title">Order history</h2>
+  <p id="history-summary" class="muted"></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Date</th><th>Store</th><th>Product</th><th class="num">Quantity</th><th class="num">Points</th></tr>
+      </thead>
+      <tbody id="history-body"></tbody>
+    </table>
+  </div>
+  <div class="dialog-buttons">
+    <button type="button" class="btn" id="history-close">Close</button>
+  </div>
+</dialog>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
