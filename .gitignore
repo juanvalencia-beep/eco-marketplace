@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+*.db
+*.db-journal
+.env
+
+# latex build files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
