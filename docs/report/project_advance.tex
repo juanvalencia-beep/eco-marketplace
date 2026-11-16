@@ -1,0 +1,474 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{float}
+\captionsetup{font={small,it},labelfont=bf,skip=4pt}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.8em}
+\titlespacing*{\subsection}{0pt}{1.2em}{0.5em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue!50!black,
+  pdftitle={Project Advance - Eco-Marketplace}}
+
+\lstset{basicstyle=\ttfamily\footnotesize, breaklines=true, frame=single,
+  columns=fullflexible, keepspaces=true, showstringspaces=false,
+  literate={é}{{\'e}}1 {í}{{\'i}}1 {á}{{\'a}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1}
+
+\setlength{\parindent}{0pt}
+\let\oldus\_
+\renewcommand{\_}{\oldus\allowbreak}
+\sloppy
+\setlength{\parskip}{0.6em}
+
+\newcommand{\repourl}{https://github.com/juanvalencia-beep/eco-marketplace}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE Project Advance}\\[0.6em]
+  {\large Simplified Management System for Eco-Marketplace and Local Refill Stations}\\[2em]
+  Jonatan Vazques\\[0.5em]
+  Juan Valencia\\[0.5em]
+  David Guanoluisa\\[1em]
+  November 16, 2026
+\end{center}
+
+\vspace{1em}
+
+\section{Summary of the Advance}
+
+This document shows the progress of the project after the design delivery. In this stage the
+database designed in the previous document was implemented, a REST API (APIDB) was built on top of
+it with the CRUD operations, and a first version of the web interface (GUI) was connected to the API.
+
+\begin{center}
+\begin{tabular}{p{5.2cm} p{2.2cm} p{7.2cm}}
+\toprule
+\textbf{Item} & \textbf{Progress} & \textbf{Status} \\
+\midrule
+Database design & 100\% & Conceptual and logical model in 3NF, data dictionary and naming conventions. \\
+Database implementation & 100\% & SQLite (main) and MySQL scripts with all keys and constraints. \\
+APIDB CRUD operations & 90\% & CRUD for the 5 tables, order transaction, history and low stock report. 49 of 49 test cases passed. \\
+GUI & 70\% & Web interface with 6 sections, connected to the API. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The source code is in the repository: \url{\repourl}
+
+% ============================================================
+\section{Database Design}
+
+The design did not change from the previous delivery. The system has five tables:
+\texttt{cliente}, \texttt{tienda}, \texttt{producto}, \texttt{inventario} and \texttt{pedido}.
+\texttt{inventario} solves the many-to-many relationship between stores and products, and
+\texttt{pedido} connects one customer, one store and one product.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\linewidth]{img/er_diagram.png}
+  \caption{Conceptual ER diagram (Chen notation) made by the team.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\linewidth]{img/logical_model.png}
+  \caption{Logical model in 3NF (dbdiagram.io).}
+\end{figure}
+
+The schema is in Third Normal Form: all values are atomic, \texttt{cantidad\_stock} depends on the
+whole composite key of \texttt{inventario}, and the name and unit of a product are only stored in
+\texttt{producto}.
+
+% ============================================================
+\section{Database Implementation}
+
+The database was implemented in \textbf{SQLite}, which is the engine used to run the project and
+the tests, because it does not need a server and the whole database is a single file. A second
+script for \textbf{MySQL 8.0.16+} is also included, and the API can connect to MySQL only by
+changing the \texttt{DATABASE\_URL} variable.
+
+\begin{center}
+\begin{tabular}{>{\raggedright}p{4.6cm} p{10cm}}
+\toprule
+\textbf{File} & \textbf{Content} \\
+\midrule
+\texttt{database/schema\_sqlite.sql} & Creates the 5 tables, constraints and indexes in SQLite. \\
+\texttt{database/schema\_mysql.sql} & The same schema for MySQL (InnoDB, \texttt{AUTO\_INCREMENT}). \\
+\texttt{models.py} & The same tables as SQLAlchemy models, used by the API. \\
+\texttt{seed.py} & Creates the tables and loads sample data (stores in Quito, products, customers, inventory and orders). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All the constraints defined in the naming conventions (Annex B of the design document) were created
+with their names, so when a rule is broken the database error says exactly which rule failed:
+
+\begin{itemize}[itemsep=0.1em]
+  \item Primary keys: \texttt{pk\_cliente}, \texttt{pk\_tienda}, \texttt{pk\_producto}, \texttt{pk\_pedido}, \texttt{pk\_inventario} (composite).
+  \item Foreign keys with \texttt{ON DELETE RESTRICT}: \texttt{fk\_pedido\_cliente}, \texttt{fk\_pedido\_tienda}, \texttt{fk\_pedido\_producto}, \texttt{fk\_inventario\_tienda}, \texttt{fk\_inventario\_producto}.
+  \item Unique: \texttt{uq\_cliente\_correo\_electronico}.
+  \item Check: \texttt{ck\_cliente\_puntos\_ecologicos\_no\_negativo}, \texttt{ck\_pedido\_cantidad\_comprada\_positiva}, \texttt{ck\_inventario\_cantidad\_stock\_no\_negativa}.
+  \item Indexes: \texttt{idx\_pedido\_cliente\_id}, \texttt{idx\_pedido\_tienda\_id}, \texttt{idx\_pedido\_producto\_id}.
+\end{itemize}
+
+One detail of SQLite is that foreign keys are disabled by default. For that reason every
+connection runs \texttt{PRAGMA foreign\_keys = ON}; without it, TC-06 would fail.
+
+\begin{lstlisting}[caption={Part of \texttt{schema\_sqlite.sql}: the \texttt{pedido} table.}]
+CREATE TABLE pedido (
+    pedido_id          INTEGER        NOT NULL,
+    fecha_exacta       DATETIME       NOT NULL,
+    cantidad_comprada  DECIMAL(10,2)  NOT NULL,
+    cliente_id         INTEGER        NOT NULL,
+    tienda_id          INTEGER        NOT NULL,
+    producto_id        INTEGER        NOT NULL,
+    CONSTRAINT pk_pedido PRIMARY KEY (pedido_id AUTOINCREMENT),
+    CONSTRAINT fk_pedido_cliente FOREIGN KEY (cliente_id)
+        REFERENCES cliente (cliente_id) ON DELETE RESTRICT,
+    ...
+    CONSTRAINT ck_pedido_cantidad_comprada_positiva CHECK (cantidad_comprada > 0)
+);
+\end{lstlisting}
+
+The MySQL script was also run in the MySQL 8.4 Docker container used in the labs. The five tables
+were created with all their foreign keys, unique and check constraints. The only difference is that
+MySQL always names the primary key \texttt{PRIMARY}, so the names \texttt{pk\_*} only appear in
+SQLite.
+
+\subsection{Database test cases}
+
+The 13 test cases of the design document (Section 4) were written as automated tests in
+\texttt{tests/test\_database.py}. Each test creates a new empty database from
+\texttt{schema\_sqlite.sql} and runs the steps of the test case with SQL, using Python's
+\texttt{sqlite3} module.
+
+\begin{center}
+\small
+\begin{longtable}{p{1.2cm} p{1.4cm} >{\raggedright}p{9.6cm} p{1.4cm}}
+\toprule
+\textbf{Test} & \textbf{Req.} & \textbf{What is checked} & \textbf{Status} \\
+\midrule
+\endhead
+TC-01 & FR-01 & New customer gets an automatic id and 0 eco-points. & Passed \\
+TC-02 & FR-02 & Inventory row (1,1) with 100.00 is saved and returned once. & Passed \\
+TC-03 & NFR-01 & 50 concurrent transactions subtract 1.00 each; final stock is 50.00 and it takes less than 2 s. & Passed \\
+TC-04 & FR-02 & A second row (1,1) in \texttt{inventario} is rejected by \texttt{pk\_inventario}. & Passed \\
+TC-05 & FR-03 & A valid order of 2.50 is saved with its 5 values. & Passed \\
+TC-06 & FR-03 & An order with \texttt{cliente\_id}=9999 is rejected by \texttt{fk\_pedido\_cliente}. & Passed \\
+TC-07 & FR-03 & Quantities 0 and $-1.00$ are rejected by \texttt{ck\_pedido\_cantidad\_comprada\_positiva}. & Passed \\
+TC-08 & FR-04 & History of customer 1 returns exactly 3 orders, newest first. & Passed \\
+TC-09 & FR-05 & Order of 2.50 and stock update in one transaction; stock is 97.50. & Passed \\
+TC-10 & FR-05 & Order of 500.00 is rolled back by the check on stock; stock stays 97.50. & Passed \\
+TC-11 & FR-06 & Low stock query returns only the row with 5.00. & Passed \\
+TC-12 & NFR-02 & Duplicate email is rejected by \texttt{uq\_cliente\_correo\_electronico}. & Passed \\
+TC-13 & NFR-03 & The script creates the 5 tables with their keys and constraints. & Passed \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+For TC-03 we had a problem at first: with the default waiting of SQLite the 50 threads took between
+2 and 4 seconds, because SQLite waits in steps of up to 100 ms when the database is locked. We
+changed the test to use WAL mode and a short retry, and now it finishes in less than one second
+with no lost updates.
+
+% ============================================================
+\section{API Design}
+
+The API was built with \textbf{Flask} and \textbf{Flask-SQLAlchemy} in Python, the same tools used
+in the course labs. It follows REST: each table is a resource, the HTTP method says the operation,
+and all the data goes in JSON. All routes start with \texttt{/api}. The full contract is in
+\texttt{docs/API.md}.
+
+\begin{center}
+\begin{tabular}{p{2.4cm} p{9cm}}
+\toprule
+\textbf{HTTP code} & \textbf{Meaning} \\
+\midrule
+200 / 201 & OK / Created \\
+400 & Missing or invalid data (for example a quantity of 0) \\
+404 & The record, or a record it points to, does not exist \\
+409 & A database rule was broken (duplicate email, not enough stock, delete blocked) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Endpoints}
+
+\begin{center}
+\small
+\begin{longtable}{>{\raggedright}p{2.5cm} >{\raggedright}p{5.4cm} p{6.4cm}}
+\toprule
+\textbf{Method} & \textbf{Route} & \textbf{Description} \\
+\midrule
+\endhead
+GET & \texttt{/api/clientes} & List customers (optional search \texttt{?q=}) \\
+GET & \texttt{/api/clientes/<id>} & One customer \\
+POST & \texttt{/api/clientes} & Register a customer with 0 points (FR-01) \\
+PUT & \texttt{/api/clientes/<id>} & Update name, email or points \\
+DELETE & \texttt{/api/clientes/<id>} & Delete a customer without orders \\
+GET & \texttt{/api/clientes/<id>/pedidos} & Order history of a customer (FR-04) \\
+\midrule
+GET, POST & \texttt{/api/tiendas} & List / create stores \\
+GET, PUT, DELETE & \texttt{/api/tiendas/<id>} & Read / update / delete a store \\
+\midrule
+GET, POST & \texttt{/api/productos} & List / create products \\
+GET, PUT, DELETE & \texttt{/api/productos/<id>} & Read / update / delete a product \\
+\midrule
+GET & \texttt{/api/inventario} & Stock of all stores (optional \texttt{?tienda\_id=}) (FR-02) \\
+POST & \texttt{/api/inventario} & Add a product to a store \\
+GET, PUT, DELETE & \texttt{/api/inventario/\allowbreak<tienda>/<producto>} & Read / change / delete one stock row \\
+GET & \texttt{/api/inventario/stock-bajo} & Low stock report, less than 10 (FR-06) \\
+\midrule
+GET & \texttt{/api/pedidos} & List orders, newest first \\
+GET & \texttt{/api/pedidos/<id>} & One order \\
+POST & \texttt{/api/pedidos} & Register a refill order (FR-03, FR-05) \\
+DELETE & \texttt{/api/pedidos/<id>} & Cancel an order \\
+\midrule
+GET & \texttt{/api/resumen} & Totals for the dashboard \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+Example of a request and its answer:
+
+\begin{lstlisting}
+POST /api/pedidos
+{"cliente_id": 1, "tienda_id": 1, "producto_id": 1, "cantidad_comprada": 2.5}
+
+201 Created
+{"pedido_id": 13, "fecha_exacta": "2026-11-16T15:23:10", "cantidad_comprada": 2.5,
+ "cliente_id": 1, "tienda_id": 1, "producto_id": 1, "nombre_completo": "Ana Pérez",
+ "nombre_sucursal": "Sucursal Centro", "nombre_producto": "Detergente líquido",
+ "unidad_medida": "liters", "puntos_ganados": 25}
+\end{lstlisting}
+
+\subsection{Business rules in the API}
+
+\begin{itemize}[itemsep=0.2em]
+  \item \textbf{Register an order (FR-03, FR-05).} \texttt{POST /api/pedidos} works as one
+  transaction: it checks that the customer, store and product exist and that the store has enough
+  stock, then it saves the order, subtracts the quantity from \texttt{inventario} and adds the
+  eco-points to the customer. If any step fails, everything is rolled back.
+  \item \textbf{Eco-points.} The customer earns 10 points for each unit bought (2.50 liters = 25 points).
+  \item \textbf{Cancel an order.} \texttt{DELETE /api/pedidos/<id>} gives the stock back and removes the points.
+  Orders are not edited with \texttt{PUT}, because changing an order after the stock moved would break the inventory.
+  \item \textbf{Delete with dependencies.} Deleting a customer, store or product that is used by
+  an order or inventory row is blocked by \texttt{ON DELETE RESTRICT}, and the API answers 409.
+  \item \textbf{Low stock (FR-06).} \texttt{GET /api/inventario/stock-bajo} returns the rows with less than 10 units.
+\end{itemize}
+
+% ============================================================
+\section{API Implementation and Test Cases}
+
+The API code is divided in three files: \texttt{models.py} has the tables as SQLAlchemy classes,
+\texttt{routes.py} has the endpoints, and \texttt{app.py} creates the Flask application, turns on
+the foreign keys of SQLite and serves the GUI. When the database rejects an operation (for example
+a duplicate email), the API catches the \texttt{IntegrityError} and answers with a 409 and a clear
+message instead of a 500 error.
+
+The part that took more work was the order registration, because three tables change at the same
+time. The stock and the points are changed in SQL with \texttt{cantidad\_stock = cantidad\_stock - x}
+instead of reading the value, subtracting in Python and saving it again. In this way two orders at
+the same moment cannot overwrite each other, and the check \texttt{cantidad\_stock >= 0} is the last
+protection if something goes wrong.
+
+\subsection{API test cases}
+
+The API was tested with the test client of Flask in \texttt{tests/test\_api.py}. Each test uses a
+new temporary database with a small set of data. There are 35 API tests:
+
+\begin{center}
+\small
+\begin{longtable}{p{3cm} p{10cm} p{1.4cm}}
+\toprule
+\textbf{Resource} & \textbf{Tests} & \textbf{Status} \\
+\midrule
+\endhead
+Customers (13) & list, search, create with 0 points, missing field, body without JSON, duplicate email (409), update, invalid values, update to a duplicate email, not found (404), delete, delete with orders blocked (409), history newest first & Passed \\
+Stores (3) & full CRUD, missing field (400), delete with inventory blocked (409) & Passed \\
+Products (2) & full CRUD, delete with inventory blocked (409) & Passed \\
+Inventory (6) & list and filter by store, create, duplicate (409), wrong store or product (404), update and delete, low stock report & Passed \\
+Orders (8) & create updates stock and points, create with a given date, not enough stock (409, stock unchanged), invalid quantity (400), missing references (404), cancel restores stock and points, points never negative, list newest first & Passed \\
+Other (3) & \texttt{/} serves the GUI, unknown route returns a JSON error, \texttt{/api/resumen} & Passed \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+Result of running all the tests (database and API):
+
+\begin{lstlisting}
+> python -m pytest
+tests/test_api.py ...................................               [ 71%]
+tests/test_database.py ..............                                [100%]
+============================= 49 passed in 3.83s ==============================
+\end{lstlisting}
+
+The API was also run against MySQL (Docker container \texttt{mysqlcontainer}) changing only
+\texttt{DATABASE\_URL}. Creating a customer, a duplicate email (409), an order, an order without
+enough stock (409), deleting a customer with orders (409) and cancelling an order gave the same
+results as with SQLite.
+
+% ============================================================
+\section{GUI Design and Integration}
+
+The GUI is a web page made with HTML, CSS and JavaScript, without frameworks. Flask serves it at
+\texttt{http://127.0.0.1:5000}, and the page uses \texttt{fetch} to call the API, so everything
+shown on the screen comes from the database. The file \texttt{static/js/api.js} has the functions
+that call the API, and \texttt{static/js/app.js} has the logic of each section.
+
+The design is simple: a menu on the left with the sections and the content on the right. We used
+one green color for the main buttons, tables with thin lines, and yellow for the stock alerts.
+Messages from the API are shown in a box at the top: green when the operation worked and red when
+the API returns an error, for example when the email already exists or there is not enough stock.
+Before deleting anything the page asks for confirmation.
+
+\begin{center}
+\begin{tabular}{p{2.6cm} p{8cm} p{3.6cm}}
+\toprule
+\textbf{Section} & \textbf{What the user can do} & \textbf{Requirement} \\
+\midrule
+Dashboard & See totals and the low stock alert & FR-06 \\
+Customers & List, search, add, edit, delete, see order history & FR-01, FR-04 \\
+Stores & List, add, edit, delete & -- \\
+Products & List, add, edit, delete & -- \\
+Inventory & See stock by store, add a product to a store, update stock, delete & FR-02, FR-06 \\
+Orders & Register a refill order, see the points earned, list and cancel orders & FR-03, FR-05 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{img/gui_dashboard.png}
+  \caption{Dashboard with the totals and the low stock alert (FR-06).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{img/gui_error_duplicate.png}
+  \caption{Customers section. The API rejects a duplicate email and the GUI shows the message (NFR-02).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{img/gui_history.png}
+  \caption{Order history of a customer, newest first (FR-04).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{img/gui_inventory.png}
+  \caption{Inventory section: stock of each product in each store (FR-02).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{img/gui_orders.png}
+  \caption{Registering a refill order. The stock is reduced and the customer earns 25 eco-points (FR-03, FR-05).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.48\linewidth]{img/gui_products.png}\hfill
+  \includegraphics[width=0.48\linewidth]{img/gui_stores.png}
+  \caption{Products and Stores sections.}
+\end{figure}
+
+% ============================================================
+\section{Repository and How to Run}
+
+Repository: \url{\repourl}
+
+\begin{lstlisting}
+database/        SQL scripts (SQLite and MySQL)
+models.py        tables as SQLAlchemy models
+routes.py        API endpoints
+app.py           Flask application, also serves the GUI
+seed.py          creates the tables and loads sample data
+static/          GUI (HTML, CSS, JavaScript)
+tests/           database and API test cases
+docs/API.md      documentation of the endpoints
+docs/report/     LaTeX source of this document
+\end{lstlisting}
+
+To run the project:
+
+\begin{lstlisting}
+pip install -r requirements.txt
+python seed.py
+python app.py          # then open http://127.0.0.1:5000
+python -m pytest -v    # run the test cases
+\end{lstlisting}
+
+To use MySQL, the variable \texttt{DATABASE\_URL} is set before running \texttt{seed.py} and \texttt{app.py}:
+
+\begin{lstlisting}
+set DATABASE_URL=mysql+pymysql://root:123456@127.0.0.1:3306/eco_marketplace
+\end{lstlisting}
+
+% ============================================================
+\section{Next Steps}
+
+\begin{itemize}[itemsep=0.2em]
+  \item Add a login for the staff, so only registered users can use the GUI.
+  \item Let the user choose the minimum stock of the alert from the GUI (the API already accepts \texttt{?limite=}).
+  \item Pagination in the tables when there are many customers or orders.
+  \item Simple reports: sales by store and most refilled products.
+  \item Final tests of the GUI and the demonstration.
+\end{itemize}
+
+% ============================================================
+\section{Use of Generative AI}
+
+As in the previous delivery, generative AI was used as support. The database design, the
+requirements and the test cases come from the design document made by the team. In this delivery
+Claude (Anthropic) was used to help write parts of the code of the API, the tests and the GUI, and
+to give format to this document. The team reviewed the code, ran the application and the tests, and
+checked the results shown in this document.
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright}p{2.8cm} >{\raggedright}p{6.2cm} >{\raggedright}p{1.9cm} >{\raggedright}p{1.6cm} >{\raggedright\arraybackslash}p{1.8cm}}
+\toprule
+\textbf{Section / Task} & \textbf{Prompt Used} & \textbf{Model} & \textbf{Version} & \textbf{Date} \\
+\midrule
+API, tests and GUI (Sections 3--5) & (Translated from Spanish) ``This is our project [design document PDF]. We have to do the project advance: database implemented in MySQL/SQLite, APIDB CRUD operations partially implemented (70\%) with test cases passed, and GUI partially implemented (50\%) and integrated with the API.'' & Claude (Anthropic) & Claude Opus 5.5 & Nov 16, 2026 \\
+Document format & Same conversation: help to organize this report in LaTeX with the results of the tests. & Claude (Anthropic) & Claude Opus 5.5 & Nov 16, 2026 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{References}
+
+\begin{enumerate}[itemsep=0.2em]
+  \item Codd, E. F. (1970). A relational model of data for large shared data banks. \textit{Communications of the ACM, 13}(6), 377--387.
+  \item Elmasri, R., \& Navathe, S. B. (2016). \textit{Fundamentals of database systems} (7th ed.). Pearson.
+  \item Silberschatz, A., Korth, H. F., \& Sudarshan, S. (2020). \textit{Database system concepts} (7th ed.). McGraw-Hill Education.
+  \item Pallets Projects. (n.d.). \textit{Flask documentation}. \url{https://flask.palletsprojects.com}
+  \item SQLAlchemy. (n.d.). \textit{SQLAlchemy 2.0 documentation}. \url{https://docs.sqlalchemy.org}
+  \item SQLite. (n.d.). \textit{SQLite foreign key support}. \url{https://www.sqlite.org/foreignkeys.html}
+\end{enumerate}
+
+\end{document}
