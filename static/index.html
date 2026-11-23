@@ -3,238 +3,679 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Eco-Marketplace Admin</title>
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='10' y='2' width='12' height='5' rx='1.5' fill='%23133A31'/%3E%3Crect x='6' y='7' width='20' height='23' rx='5' fill='%23133A31'/%3E%3Crect x='9' y='15' width='14' height='12' rx='3' fill='%23E0A447'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Young+Serif&display=swap">
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <div class="brand">
-      <strong>Eco-Marketplace</strong>
-      <span>Refill stations admin</span>
-    </div>
+
+<!-- Icons used across the page. Each <symbol> is drawn with <svg><use href="#i-name"/></svg>. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+    <symbol id="i-orders" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+    <symbol id="i-reports" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 16v-4M11 16V6M16 16V9M21 16v-6"/></symbol>
+    <symbol id="i-customers" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></symbol>
+    <symbol id="i-stores" viewBox="0 0 24 24"><path d="M4 9 5.5 4h13L20 9"/><path d="M4 9h16v1.5a2.7 2.7 0 0 1-5.3 0 2.7 2.7 0 0 1-5.4 0 2.7 2.7 0 0 1-5.3 0z"/><path d="M5.5 13v8h13v-8"/><path d="M10 21v-4.5h4V21"/></symbol>
+    <symbol id="i-products" viewBox="0 0 24 24"><path d="M8.5 3h7v3h-7z"/><path d="M7.5 6h9A2.5 2.5 0 0 1 19 8.5V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8.5A2.5 2.5 0 0 1 7.5 6z"/><path d="M5 13.5h14"/></symbol>
+    <symbol id="i-inventory" viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5-9 4.5z"/><path d="M3 7.5v9L12 21l9-4.5v-9"/><path d="M12 12v9"/></symbol>
+    <symbol id="i-api" viewBox="0 0 24 24"><path d="M8 4C6 4 5 5 5 7v2c0 1.5-1 3-2 3 1 0 2 1.5 2 3v2c0 2 1 3 3 3M16 4c2 0 3 1 3 3v2c0 1.5 1 3 2 3-1 0-2 1.5-2 3v2c0 2-1 3-3 3"/></symbol>
+    <symbol id="i-slides" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="1.5"/><path d="M7 14h10v7H7z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 20 5c0 9-5 15-14 15"/><path d="M5 19c3-4 6-6.5 10-8.5"/></symbol>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<div class="app">
+  <!-- Top bar: only visible on narrow screens, where the sidebar becomes a drawer -->
+  <header class="topbar">
+    <button type="button" class="icon-btn topbar-menu" id="nav-toggle" aria-controls="sidebar" aria-expanded="false" aria-label="Open navigation">
+      <svg class="icon"><use href="#i-menu"/></svg>
+    </button>
+    <a href="#dashboard" class="topbar-brand">
+      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      Eco-Marketplace
+    </a>
+  </header>
+
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a href="#dashboard" class="brand">
+      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      <span class="brand-text">
+        <strong>Eco-Marketplace</strong>
+        <span>Refill stations admin</span>
+      </span>
+    </a>
+
     <nav class="nav">
-      <a href="#dashboard" data-section="dashboard">Dashboard</a>
-      <a href="#customers" data-section="customers">Customers</a>
-      <a href="#stores" data-section="stores">Stores</a>
-      <a href="#products" data-section="products">Products</a>
-      <a href="#inventory" data-section="inventory">Inventory</a>
-      <a href="#orders" data-section="orders">Orders</a>
+      <a href="#dashboard" data-page="dashboard"><svg class="icon"><use href="#i-dashboard"/></svg>Dashboard</a>
+      <a href="#orders" data-page="orders"><svg class="icon"><use href="#i-orders"/></svg>Orders</a>
+      <a href="#reports" data-page="reports"><svg class="icon"><use href="#i-reports"/></svg>Reports</a>
+      <hr>
+      <a href="#customers" data-page="customers"><svg class="icon"><use href="#i-customers"/></svg>Customers</a>
+      <a href="#stores" data-page="stores"><svg class="icon"><use href="#i-stores"/></svg>Stores</a>
+      <a href="#products" data-page="products"><svg class="icon"><use href="#i-products"/></svg>Products</a>
+      <a href="#inventory" data-page="inventory"><svg class="icon"><use href="#i-inventory"/></svg>Inventory</a>
     </nav>
-    <p class="sidebar-note">Databases course project</p>
-  </aside>
 
-  <main class="content">
-    <div id="message" class="message" hidden>
-      <span id="message-text"></span>
-      <button type="button" id="message-close" class="message-close" aria-label="Close">&times;</button>
+    <div class="sidebar-links">
+      <a href="/api/docs" target="_blank" rel="noopener">
+        <svg class="icon"><use href="#i-api"/></svg>API docs
+        <svg class="icon icon-ext" aria-hidden="true"><use href="#i-external"/></svg>
+        <span class="sr-only">(opens in a new tab)</span>
+      </a>
+      <a href="/presentation" target="_blank" rel="noopener">
+        <svg class="icon"><use href="#i-slides"/></svg>Presentation
+        <svg class="icon icon-ext" aria-hidden="true"><use href="#i-external"/></svg>
+        <span class="sr-only">(opens in a new tab)</span>
+      </a>
+      <p class="sidebar-note">Databases course project</p>
     </div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
 
-    <!-- Dashboard -->
-    <section id="section-dashboard" class="section">
-      <h1>Dashboard</h1>
-      <div class="cards">
-        <div class="card"><span class="card-label">Customers</span><span class="card-value" id="count-clientes">-</span></div>
-        <div class="card"><span class="card-label">Stores</span><span class="card-value" id="count-tiendas">-</span></div>
-        <div class="card"><span class="card-label">Products</span><span class="card-value" id="count-productos">-</span></div>
-        <div class="card"><span class="card-label">Orders</span><span class="card-value" id="count-pedidos">-</span></div>
-        <div class="card card-warn"><span class="card-label">Low stock items</span><span class="card-value" id="count-stock_bajo">-</span></div>
-      </div>
+  <main class="main" id="main" tabindex="-1">
 
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Low stock alert</h2>
-          <span class="muted">Inventory rows with less than 10 units in stock</span>
+    <!-- ============================== Dashboard ============================== -->
+    <section class="page" id="page-dashboard" data-title="Dashboard" hidden>
+      <header class="page-head">
+        <div>
+          <h1 tabindex="-1">Dashboard</h1>
+          <p class="lede">Sales, stock and eco-points across every refill station.</p>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Store</th><th>Product</th><th class="num">Stock</th><th>Unit</th></tr>
-            </thead>
-            <tbody id="lowstock-body"></tbody>
-          </table>
+        <div class="page-actions">
+          <a href="#reports" class="btn">Open reports</a>
+          <a href="#orders" class="btn btn-primary"><svg class="icon"><use href="#i-plus"/></svg>New order</a>
         </div>
-      </div>
-    </section>
+      </header>
 
-    <!-- Customers -->
-    <section id="section-customers" class="section" hidden>
-      <h1>Customers</h1>
-      <form id="customer-form" class="panel form-row">
-        <label>Full name <input name="nombre_completo" required maxlength="100"></label>
-        <label>Email <input name="correo_electronico" type="email" required maxlength="120"></label>
-        <button type="submit" class="btn btn-primary">Add customer</button>
-      </form>
+      <section class="ledger" aria-label="Key figures">
+        <div class="kpi kpi-lead">
+          <span class="kpi-label">Revenue</span>
+          <span class="kpi-value" id="kpi-ingresos">–</span>
+          <span class="kpi-note">All orders, USD</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Orders</span>
+          <span class="kpi-value" id="kpi-pedidos">–</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Customers</span>
+          <span class="kpi-value" id="kpi-clientes">–</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Stores</span>
+          <span class="kpi-value" id="kpi-tiendas">–</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Products</span>
+          <span class="kpi-value" id="kpi-productos">–</span>
+        </div>
+        <div class="kpi kpi-points">
+          <span class="kpi-label"><svg class="icon"><use href="#i-leaf"/></svg>Eco-points</span>
+          <span class="kpi-value" id="kpi-puntos_ecologicos">–</span>
+          <span class="kpi-note">Held by customers</span>
+        </div>
+        <a class="kpi kpi-alert" href="#inventory">
+          <span class="kpi-label">Low stock</span>
+          <span class="kpi-value" id="kpi-stock_bajo">–</span>
+          <span class="kpi-note">Rows under 10 units</span>
+        </a>
+      </section>
 
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Customer list</h2>
-          <input id="customer-search" type="search" placeholder="Search by name or email" class="search">
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Name</th><th>Email</th><th class="num">Eco-points</th><th class="actions">Actions</th></tr>
-            </thead>
-            <tbody id="customers-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+      <div class="dash-grid">
+        <article class="panel dash-daily">
+          <header class="panel-head">
+            <div>
+              <h2>Revenue per day</h2>
+              <p class="panel-sub">Last 30 days</p>
+            </div>
+            <p class="panel-figure" id="daily-total">–</p>
+          </header>
+          <div class="chart chart-line" id="dash-daily-chart" role="img" aria-label="Revenue per day for the last 30 days"></div>
+        </article>
 
-    <!-- Stores -->
-    <section id="section-stores" class="section" hidden>
-      <h1>Stores</h1>
-      <form id="store-form" class="panel form-row">
-        <label>Branch name <input name="nombre_sucursal" required maxlength="100"></label>
-        <label class="grow">Address <input name="direccion" required maxlength="200"></label>
-        <button type="submit" class="btn btn-primary">Add store</button>
-      </form>
-      <div class="panel">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Branch name</th><th>Address</th><th class="actions">Actions</th></tr>
-            </thead>
-            <tbody id="stores-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+        <article class="panel dash-low">
+          <header class="panel-head">
+            <div>
+              <h2>Low stock</h2>
+              <p class="panel-sub">Fill level against the 10 unit threshold</p>
+            </div>
+            <a href="#inventory" class="btn btn-sm btn-ghost">Inventory</a>
+          </header>
+          <ul class="stock-list" id="dash-low"></ul>
+        </article>
 
-    <!-- Products -->
-    <section id="section-products" class="section" hidden>
-      <h1>Products</h1>
-      <form id="product-form" class="panel form-row">
-        <label class="grow">Name <input name="nombre" required maxlength="100"></label>
-        <label>Unit <input name="unidad_medida" required maxlength="20" list="unit-options" placeholder="liters, grams..."></label>
-        <button type="submit" class="btn btn-primary">Add product</button>
-      </form>
-      <datalist id="unit-options">
-        <option value="liters"></option>
-        <option value="milliliters"></option>
-        <option value="grams"></option>
-        <option value="kilograms"></option>
-      </datalist>
-      <div class="panel">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Name</th><th>Unit</th><th class="actions">Actions</th></tr>
-            </thead>
-            <tbody id="products-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+        <article class="panel dash-stores">
+          <header class="panel-head">
+            <div>
+              <h2>Revenue by store</h2>
+              <p class="panel-sub">All time</p>
+            </div>
+          </header>
+          <div id="dash-stores"></div>
+        </article>
 
-    <!-- Inventory -->
-    <section id="section-inventory" class="section" hidden>
-      <h1>Inventory</h1>
-      <form id="inventory-form" class="panel form-row">
-        <label>Store <select name="tienda_id" class="store-select" required></select></label>
-        <label>Product <select name="producto_id" class="product-select" required></select></label>
-        <label>Quantity <input name="cantidad_stock" type="number" min="0" step="0.01" required></label>
-        <button type="submit" class="btn btn-primary">Add to inventory</button>
-      </form>
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Stock per store</h2>
-          <label class="inline-label">Store
-            <select id="inventory-filter"></select>
-          </label>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Store</th><th>Product</th><th class="num">Stock</th><th>Unit</th><th class="actions">Actions</th></tr>
-            </thead>
-            <tbody id="inventory-body"></tbody>
-          </table>
-        </div>
+        <article class="panel dash-top">
+          <header class="panel-head">
+            <div>
+              <h2>Top products</h2>
+              <p class="panel-sub">By revenue, all time</p>
+            </div>
+          </header>
+          <div id="dash-top"></div>
+        </article>
+
+        <article class="panel dash-recent">
+          <header class="panel-head">
+            <div>
+              <h2>Recent orders</h2>
+              <p class="panel-sub">The six newest orders</p>
+            </div>
+            <a href="#orders" class="btn btn-sm btn-ghost">All orders</a>
+          </header>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Date</th><th>Customer</th><th>Store</th><th class="num">Total</th><th class="num">Points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+              </thead>
+              <tbody id="dash-recent"></tbody>
+            </table>
+          </div>
+        </article>
       </div>
     </section>
 
-    <!-- Orders -->
-    <section id="section-orders" class="section" hidden>
-      <h1>Orders</h1>
-      <form id="order-form" class="panel">
-        <h2>New refill order</h2>
-        <div class="form-row">
-          <label>Customer <select name="cliente_id" id="order-customer" required></select></label>
-          <label>Store <select name="tienda_id" id="order-store" class="store-select" required></select></label>
-          <label>Product <select name="producto_id" id="order-product" class="product-select" required></select></label>
-          <label>Quantity
-            <span class="with-unit">
-              <input name="cantidad_comprada" id="order-qty" type="number" min="0.01" step="0.01" required>
-              <span id="order-unit" class="unit"></span>
-            </span>
-          </label>
-          <button type="submit" class="btn btn-primary">Register order</button>
+    <!-- ============================== Orders ============================== -->
+    <section class="page" id="page-orders" data-title="Orders" hidden>
+      <header class="page-head">
+        <div>
+          <h1 tabindex="-1">Orders</h1>
+          <p class="lede">Build a refill order line by line, then review or change past orders.</p>
         </div>
-        <p id="order-hint" class="hint"></p>
-        <div id="order-result" class="order-result" hidden></div>
+      </header>
+
+      <form class="panel cart" id="cart-form" novalidate>
+        <div class="cart-main">
+          <h2>New order</h2>
+          <div class="field-row">
+            <label class="field">Customer
+              <select id="cart-customer" required></select>
+            </label>
+            <label class="field">Store
+              <select id="cart-store" required></select>
+            </label>
+          </div>
+
+          <fieldset class="cart-add" id="cart-add" disabled>
+            <legend class="sr-only">Add a product line</legend>
+            <label class="field grow">Product
+              <select id="cart-product"></select>
+            </label>
+            <label class="field field-qty">Quantity
+              <span class="input-unit">
+                <input id="cart-qty" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+                <span class="unit" id="cart-unit"></span>
+              </span>
+            </label>
+            <button type="button" class="btn" id="cart-add-btn"><svg class="icon"><use href="#i-plus"/></svg>Add line</button>
+          </fieldset>
+          <p class="hint" id="cart-hint" aria-live="polite">Choose a store to see the products it stocks.</p>
+
+          <div class="table-wrap">
+            <table class="cart-table stack-mobile">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th class="num">Unit price</th>
+                  <th class="num">In stock</th>
+                  <th class="num">Quantity</th>
+                  <th class="num">Subtotal</th>
+                  <th class="num">Points</th>
+                  <th class="actions"><span class="sr-only">Remove</span></th>
+                </tr>
+              </thead>
+              <tbody id="cart-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="receipt" aria-label="Order summary">
+          <h3>Summary</h3>
+          <dl class="receipt-rows">
+            <div><dt>Customer</dt><dd id="sum-customer">Not chosen</dd></div>
+            <div><dt>Store</dt><dd id="sum-store">Not chosen</dd></div>
+            <div><dt>Lines</dt><dd id="sum-lines">0</dd></div>
+          </dl>
+          <div class="receipt-total">
+            <span>Total</span>
+            <strong id="sum-total">$0.00</strong>
+          </div>
+          <p class="receipt-points"><svg class="icon"><use href="#i-leaf"/></svg><span id="sum-points">0</span> eco-points to earn</p>
+          <button type="submit" class="btn btn-primary btn-block" id="cart-submit" disabled>Place order</button>
+          <button type="button" class="btn btn-ghost btn-block" id="cart-clear">Clear lines</button>
+        </aside>
       </form>
 
-      <div class="panel">
-        <div class="panel-head">
-          <h2>All orders</h2>
-          <span class="muted">Newest first</span>
-        </div>
+      <article class="panel">
+        <header class="panel-head panel-head-wrap">
+          <div>
+            <h2>Order history</h2>
+            <p class="panel-sub" id="orders-count">Newest first</p>
+          </div>
+          <div class="filters">
+            <label class="field field-inline">Customer
+              <select id="orders-filter-customer"></select>
+            </label>
+            <label class="field field-inline">Store
+              <select id="orders-filter-store"></select>
+            </label>
+          </div>
+        </header>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>#</th><th>Date</th><th>Customer</th><th>Store</th><th>Product</th><th class="num">Quantity</th><th class="num">Points</th><th class="actions">Actions</th></tr>
+              <tr><th>#</th><th>Date</th><th>Customer</th><th>Store</th><th class="num">Products</th><th class="num">Total</th><th class="num">Points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
             </thead>
             <tbody id="orders-body"></tbody>
           </table>
         </div>
+      </article>
+    </section>
+
+    <!-- ============================== Reports ============================== -->
+    <section class="page" id="page-reports" data-title="Reports" hidden>
+      <header class="page-head">
+        <div>
+          <h1 tabindex="-1">Reports</h1>
+          <p class="lede">Sales by store, product, customer and day for the dates you pick.</p>
+        </div>
+        <div class="page-actions">
+          <button type="button" class="btn" id="print-all"><svg class="icon"><use href="#i-print"/></svg>Print all</button>
+        </div>
+      </header>
+
+      <form class="panel range" id="range-form">
+        <label class="field">From
+          <input type="date" id="range-desde">
+        </label>
+        <label class="field">To
+          <input type="date" id="range-hasta">
+        </label>
+        <div class="presets" role="group" aria-label="Quick ranges">
+          <button type="button" class="chip" data-days="7">7 days</button>
+          <button type="button" class="chip" data-days="30">30 days</button>
+          <button type="button" class="chip" data-days="90">90 days</button>
+          <button type="button" class="chip" data-days="all">All time</button>
+        </div>
+        <button type="submit" class="btn btn-primary">Run reports</button>
+      </form>
+      <p class="print-only print-range" id="print-range"></p>
+
+      <div class="report-grid">
+        <article class="panel report" id="report-daily">
+          <header class="panel-head panel-head-wrap">
+            <div>
+              <h2>Revenue per day</h2>
+              <p class="panel-sub" id="daily-sub">Every day in the range, including days without sales</p>
+            </div>
+            <div class="report-actions">
+              <button type="button" class="btn btn-sm" data-csv="daily"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
+              <button type="button" class="btn btn-sm" data-print="report-daily"><svg class="icon"><use href="#i-print"/></svg>Print</button>
+            </div>
+          </header>
+          <div class="report-stats" id="daily-stats"></div>
+          <div class="chart chart-line" id="report-daily-chart" role="img" aria-label="Revenue per day"></div>
+          <details class="report-table">
+            <summary>Show daily table</summary>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Day</th><th class="num">Orders</th><th class="num">Revenue</th></tr></thead>
+                <tbody id="daily-body"></tbody>
+              </table>
+            </div>
+          </details>
+        </article>
+
+        <article class="panel report" id="report-stores">
+          <header class="panel-head panel-head-wrap">
+            <div>
+              <h2>Sales by store</h2>
+              <p class="panel-sub">Revenue, orders and average ticket per branch</p>
+            </div>
+            <div class="report-actions">
+              <button type="button" class="btn btn-sm" data-csv="stores"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
+              <button type="button" class="btn btn-sm" data-print="report-stores"><svg class="icon"><use href="#i-print"/></svg>Print</button>
+            </div>
+          </header>
+          <div class="report-split">
+          <div id="stores-chart"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Store</th><th class="num">Orders</th><th class="num">Revenue</th><th class="num">Avg. ticket</th></tr></thead>
+              <tbody id="stores-report-body"></tbody>
+            </table>
+          </div>
+          </div>
+        </article>
+
+        <article class="panel report" id="report-products">
+          <header class="panel-head panel-head-wrap">
+            <div>
+              <h2>Best-selling products</h2>
+              <p class="panel-sub">Ranked by revenue</p>
+            </div>
+            <div class="report-actions">
+              <label class="field field-inline">Show
+                <select id="products-limit">
+                  <option value="5">Top 5</option>
+                  <option value="10" selected>Top 10</option>
+                  <option value="20">Top 20</option>
+                </select>
+              </label>
+              <button type="button" class="btn btn-sm" data-csv="products"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
+              <button type="button" class="btn btn-sm" data-print="report-products"><svg class="icon"><use href="#i-print"/></svg>Print</button>
+            </div>
+          </header>
+          <div class="report-split">
+          <div id="products-chart"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Product</th><th class="num">Quantity sold</th><th class="num">Orders</th><th class="num">Revenue</th></tr></thead>
+              <tbody id="products-report-body"></tbody>
+            </table>
+          </div>
+          </div>
+        </article>
+
+        <article class="panel report" id="report-customers">
+          <header class="panel-head panel-head-wrap">
+            <div>
+              <h2>Top customers</h2>
+              <p class="panel-sub">Ranked by amount spent</p>
+            </div>
+            <div class="report-actions">
+              <label class="field field-inline">Show
+                <select id="customers-limit">
+                  <option value="5">Top 5</option>
+                  <option value="10" selected>Top 10</option>
+                  <option value="20">Top 20</option>
+                </select>
+              </label>
+              <button type="button" class="btn btn-sm" data-csv="customers"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
+              <button type="button" class="btn btn-sm" data-print="report-customers"><svg class="icon"><use href="#i-print"/></svg>Print</button>
+            </div>
+          </header>
+          <div class="report-split">
+          <div id="customers-chart"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Customer</th><th class="num">Orders</th><th class="num">Spent</th><th class="num">Points held</th></tr></thead>
+              <tbody id="customers-report-body"></tbody>
+            </table>
+          </div>
+          </div>
+        </article>
       </div>
+    </section>
+
+    <!-- ============================== Customers ============================== -->
+    <section class="page" id="page-customers" data-title="Customers" hidden>
+      <header class="page-head">
+        <div>
+          <h1 tabindex="-1">Customers</h1>
+          <p class="lede">People who refill at our stations and the eco-points they hold.</p>
+        </div>
+      </header>
+
+      <form id="customer-form" class="panel form-panel">
+        <h2>Add a customer</h2>
+        <div class="field-row">
+          <label class="field grow">Full name <input name="nombre_completo" required maxlength="100" autocomplete="off"></label>
+          <label class="field grow">Email <input name="correo_electronico" type="email" required maxlength="120" autocomplete="off"></label>
+          <button type="submit" class="btn btn-primary">Add customer</button>
+        </div>
+      </form>
+
+      <article class="panel">
+        <header class="panel-head panel-head-wrap">
+          <div>
+            <h2>Customer list</h2>
+            <p class="panel-sub" id="customers-count"></p>
+          </div>
+          <label class="search">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+            <span class="sr-only">Search customers</span>
+            <input id="customer-search" type="search" placeholder="Search by name or email">
+          </label>
+        </header>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Name</th><th>Email</th><th class="num">Eco-points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody id="customers-body"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============================== Stores ============================== -->
+    <section class="page" id="page-stores" data-title="Stores" hidden>
+      <header class="page-head">
+        <div>
+          <h1 tabindex="-1">Stores</h1>
+          <p class="lede">Refill stations and where to find them.</p>
+        </div>
+      </header>
+
+      <form id="store-form" class="panel form-panel">
+        <h2>Add a store</h2>
+        <div class="field-row">
+          <label class="field">Branch name <input name="nombre_sucursal" required maxlength="100" autocomplete="off"></label>
+          <label class="field grow">Address <input name="direccion" required maxlength="200" autocomplete="off"></label>
+          <button type="submit" class="btn btn-primary">Add store</button>
+        </div>
+      </form>
+
+      <article class="panel">
+        <header class="panel-head">
+          <div>
+            <h2>Store list</h2>
+            <p class="panel-sub" id="stores-count"></p>
+          </div>
+        </header>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Branch name</th><th>Address</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody id="stores-body"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============================== Products ============================== -->
+    <section class="page" id="page-products" data-title="Products" hidden>
+      <header class="page-head">
+        <div>
+          <h1 tabindex="-1">Products</h1>
+          <p class="lede">Everything sold by weight or volume, with its price per unit.</p>
+        </div>
+      </header>
+
+      <form id="product-form" class="panel form-panel">
+        <h2>Add a product</h2>
+        <div class="field-row">
+          <label class="field grow">Name <input name="nombre" required maxlength="100" autocomplete="off"></label>
+          <label class="field">Unit <input name="unidad_medida" required maxlength="20" list="unit-options" placeholder="liters, kg…"></label>
+          <label class="field field-price">Price per unit (USD)
+            <span class="input-unit input-prefix">
+              <span class="unit">$</span>
+              <input name="precio_unitario" type="number" min="0" step="0.01" inputmode="decimal" required placeholder="0.00">
+            </span>
+          </label>
+          <button type="submit" class="btn btn-primary">Add product</button>
+        </div>
+      </form>
+      <datalist id="unit-options">
+        <option value="liters"></option>
+        <option value="milliliters"></option>
+        <option value="kg"></option>
+        <option value="grams"></option>
+        <option value="units"></option>
+      </datalist>
+
+      <article class="panel">
+        <header class="panel-head">
+          <div>
+            <h2>Product list</h2>
+            <p class="panel-sub" id="products-count"></p>
+          </div>
+        </header>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Name</th><th>Unit</th><th class="num">Price per unit</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody id="products-body"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============================== Inventory ============================== -->
+    <section class="page" id="page-inventory" data-title="Inventory" hidden>
+      <header class="page-head">
+        <div>
+          <h1 tabindex="-1">Inventory</h1>
+          <p class="lede">Stock of each product at each store. Rows under 10 units are flagged.</p>
+        </div>
+      </header>
+
+      <form id="inventory-form" class="panel form-panel">
+        <h2>Stock a product at a store</h2>
+        <div class="field-row">
+          <label class="field">Store <select name="tienda_id" id="inventory-store" required></select></label>
+          <label class="field grow">Product <select name="producto_id" id="inventory-product" required></select></label>
+          <label class="field field-qty">Quantity <input name="cantidad_stock" type="number" min="0" step="0.01" inputmode="decimal" required placeholder="0.00"></label>
+          <button type="submit" class="btn btn-primary">Add to inventory</button>
+        </div>
+      </form>
+
+      <article class="panel">
+        <header class="panel-head panel-head-wrap">
+          <div>
+            <h2>Stock per store</h2>
+            <p class="panel-sub">Edit a quantity and press Enter or Save</p>
+          </div>
+          <div class="filters">
+            <label class="field field-inline">Store
+              <select id="inventory-filter"></select>
+            </label>
+            <label class="check"><input type="checkbox" id="inventory-low-only"> Low stock only</label>
+          </div>
+        </header>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Store</th><th>Product</th><th>Level</th><th class="num">Stock</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody id="inventory-body"></tbody>
+          </table>
+        </div>
+      </article>
     </section>
   </main>
 </div>
 
-<dialog id="edit-dialog">
-  <form id="edit-form">
-    <h2 id="edit-title">Edit</h2>
-    <div id="edit-fields"></div>
-    <p id="edit-error" class="dialog-error" hidden></p>
-    <div class="dialog-buttons">
-      <button type="button" class="btn" id="edit-cancel">Cancel</button>
+<!-- Toast messages are added here by toast() in util.js -->
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<!-- Edit dialog shared by customers, stores and products -->
+<dialog id="edit-dialog" class="modal" aria-labelledby="edit-title">
+  <form id="edit-form" novalidate>
+    <header class="modal-head">
+      <h2 id="edit-title">Edit</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="icon"><use href="#i-close"/></svg></button>
+    </header>
+    <div class="modal-body" id="edit-fields"></div>
+    <p class="form-error" id="edit-error" role="alert" hidden></p>
+    <footer class="modal-foot">
+      <button type="button" class="btn" data-close>Cancel</button>
       <button type="submit" class="btn btn-primary">Save changes</button>
-    </div>
+    </footer>
   </form>
 </dialog>
 
-<dialog id="confirm-dialog">
+<!-- Confirmation dialog used before deleting or cancelling -->
+<dialog id="confirm-dialog" class="modal modal-sm" aria-labelledby="confirm-title">
   <form method="dialog">
-    <h2>Are you sure?</h2>
-    <p id="confirm-text"></p>
-    <div class="dialog-buttons">
-      <button value="no" class="btn">Cancel</button>
-      <button value="yes" class="btn btn-danger" id="confirm-yes">Yes, continue</button>
-    </div>
+    <header class="modal-head">
+      <h2 id="confirm-title">Are you sure?</h2>
+    </header>
+    <p class="modal-body" id="confirm-text"></p>
+    <footer class="modal-foot">
+      <button value="no" class="btn" autofocus>Keep it</button>
+      <button value="yes" class="btn btn-danger" id="confirm-yes">Delete</button>
+    </footer>
   </form>
 </dialog>
 
-<dialog id="history-dialog" class="wide">
-  <h2 id="history-title">Order history</h2>
-  <p id="history-summary" class="muted"></p>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>#</th><th>Date</th><th>Store</th><th>Product</th><th class="num">Quantity</th><th class="num">Points</th></tr>
-      </thead>
-      <tbody id="history-body"></tbody>
-    </table>
+<!-- Customer order history -->
+<dialog id="history-dialog" class="modal modal-wide" aria-labelledby="history-title">
+  <header class="modal-head">
+    <div>
+      <h2 id="history-title">Order history</h2>
+      <p class="panel-sub" id="history-summary"></p>
+    </div>
+    <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="modal-body">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Date</th><th>Store</th><th>Products</th><th class="num">Total</th><th class="num">Points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
   </div>
-  <div class="dialog-buttons">
-    <button type="button" class="btn" id="history-close">Close</button>
-  </div>
+</dialog>
+
+<!-- Order detail drawer: lines, date, add/edit/remove lines, cancel order -->
+<dialog id="order-drawer" class="drawer" aria-labelledby="drawer-title">
+  <header class="drawer-head">
+    <div>
+      <h2 id="drawer-title">Order</h2>
+      <p class="panel-sub" id="drawer-sub"></p>
+    </div>
+    <button type="button" class="icon-btn" data-close aria-label="Close order details"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="drawer-body" id="drawer-body"></div>
 </dialog>
 
 <script src="/static/js/api.js"></script>
+<script src="/static/js/util.js"></script>
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/catalog.js"></script>
+<script src="/static/js/orders.js"></script>
+<script src="/static/js/reports.js"></script>
 <script src="/static/js/app.js"></script>
 </body>
 </html>
