@@ -1,0 +1,8 @@
+{
+  // VS Code sugiere instalarlas al abrir la carpeta
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.debugpy",
+    "qwtel.sqlite-viewer"
+  ]
+}

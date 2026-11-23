@@ -1,0 +1,37 @@
+{
+  // Panel "Ejecutar y depurar" (Ctrl+Shift+D): elija una opción y presione F5.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "1. Cargar datos de ejemplo (seed.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/seed.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "2. Ejecutar la app (Flask, puerto 5000)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/app.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "serverReadyAction": {
+        "pattern": "Running on (http://127\\.0\\.0\\.1:[0-9]+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "3. Ejecutar todas las pruebas (pytest)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

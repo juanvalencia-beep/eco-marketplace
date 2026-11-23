@@ -4,7 +4,7 @@ Base URL: `http://127.0.0.1:5000/api`
 
 Interactive documentation (Swagger UI): `http://127.0.0.1:5000/api/docs`. The OpenAPI 3 spec is at `/api/openapi.json` and can be imported into Postman.
 
-All requests and responses use JSON. Errors always come as `{"error": "message"}`.
+All requests and responses use JSON. Errors always come as `{"error": "message"}`, with the message in Spanish because the GUI shows it to the user.
 
 | Code | When |
 |------|------|
@@ -14,7 +14,7 @@ All requests and responses use JSON. Errors always come as `{"error": "message"}
 | 404 | The record (or a referenced record) does not exist |
 | 409 | Conflict with a constraint: duplicate email, duplicate inventory row, not enough stock, or delete blocked by `ON DELETE RESTRICT` |
 
-Decimals (`cantidad_stock`, `cantidad`, `precio_unitario`, `subtotal`, `total`) are returned as numbers with 2 decimals.
+Decimals (`cantidad_stock`, `cantidad_comprada`, `precio_unitario`, `subtotal`, `total`) are returned as numbers with 2 decimals.
 Dates (`fecha_exacta`) are returned as `YYYY-MM-DDTHH:MM:SS`.
 
 ## Clientes (customers)
@@ -85,18 +85,18 @@ An order is split in two tables: `pedido` is the header (customer, store, date) 
 |--------|-------|------|-------|
 | GET | `/pedidos` | - | Newest first, each order with its lines. Optional `?cliente_id=` and `?tienda_id=` |
 | GET | `/pedidos/<id>` | - | |
-| POST | `/pedidos` | `cliente_id`, `tienda_id`, `detalles: [{producto_id, cantidad}, ...]`, optional `fecha_exacta` | One transaction (FR-05): saves the header and every line, subtracts the stock of each line and adds the eco-points. If one line fails nothing is saved |
+| POST | `/pedidos` | `cliente_id`, `tienda_id`, `detalles: [{producto_id, cantidad_comprada}, ...]`, optional `fecha_exacta` | One transaction (FR-05): saves the header and every line, subtracts the stock of each line and adds the eco-points. If one line fails nothing is saved |
 | PUT | `/pedidos/<id>` | `fecha_exacta` | Only the date can change. Customer and store can't (the stock already moved in that store) |
-| DELETE | `/pedidos/<id>` | - | Cancels the order: gives back the stock of every line and removes the points. The lines are deleted by `ON DELETE CASCADE` |
+| DELETE | `/pedidos/<id>` | - | Cancels the order: gives back the stock of every line and removes the points. Its lines are deleted first and then the header, in the same transaction (all foreign keys are `ON DELETE RESTRICT`) |
 
-Eco-points rule: the customer earns 10 points for each unit bought, rounded down per line (`int(cantidad * 10)`). 2.50 liters = 25 points.
+Eco-points rule: the customer earns 10 points for each unit bought, rounded down per line (`int(cantidad_comprada * 10)`). 2.50 liters = 25 points.
 
-POST errors: 400 if `detalles` is empty, has more than 50 lines, repeats a product, or a `cantidad` is not between 0.01 and 10000; 404 if the customer, store or a product does not exist; 409 if the store has no inventory row for a product or the stock is not enough.
+POST errors: 400 if `detalles` is empty, has more than 50 lines, repeats a product, or a `cantidad_comprada` is not between 0.01 and 10000; 404 if the customer, store or a product does not exist; 409 if the store has no inventory row for a product or the stock is not enough.
 
 Request:
 ```json
 {"cliente_id": 1, "tienda_id": 1,
- "detalles": [{"producto_id": 1, "cantidad": 2.5}, {"producto_id": 2, "cantidad": 1.25}]}
+ "detalles": [{"producto_id": 1, "cantidad_comprada": 2.5}, {"producto_id": 2, "cantidad_comprada": 1.25}]}
 ```
 
 Response (201):
@@ -106,9 +106,9 @@ Response (201):
  "num_productos": 2, "cantidad_total": 3.75, "total": 11.0, "puntos_ganados": 37,
  "detalles": [
    {"pedido_id": 29, "producto_id": 1, "nombre_producto": "Detergente líquido", "unidad_medida": "liters",
-    "cantidad": 2.5, "precio_unitario": 2.8, "subtotal": 7.0, "puntos": 25},
+    "cantidad_comprada": 2.5, "precio_unitario": 2.8, "subtotal": 7.0, "puntos": 25},
    {"pedido_id": 29, "producto_id": 2, "nombre_producto": "Avena", "unidad_medida": "kg",
-    "cantidad": 1.25, "precio_unitario": 3.2, "subtotal": 4.0, "puntos": 12}]}
+    "cantidad_comprada": 1.25, "precio_unitario": 3.2, "subtotal": 4.0, "puntos": 12}]}
 ```
 
 ## Detalle de pedido (order lines)
@@ -117,8 +117,8 @@ Response (201):
 |--------|-------|------|-------|
 | GET | `/pedidos/<id>/detalles` | - | Lines of the order |
 | GET | `/pedidos/<id>/detalles/<producto_id>` | - | One line |
-| POST | `/pedidos/<id>/detalles` | `producto_id`, `cantidad` | Adds a product: takes the stock and adds points. 409 if the product is already in the order (update that line instead) or there is not enough stock |
-| PUT | `/pedidos/<id>/detalles/<producto_id>` | `cantidad` | Changes the quantity: a bigger quantity takes the difference from the stock, a smaller one gives it back. Points are adjusted |
+| POST | `/pedidos/<id>/detalles` | `producto_id`, `cantidad_comprada` | Adds a product: takes the stock and adds points. 409 if the product is already in the order (update that line instead) or there is not enough stock |
+| PUT | `/pedidos/<id>/detalles/<producto_id>` | `cantidad_comprada` | Changes the quantity: a bigger quantity takes the difference from the stock, a smaller one gives it back. Points are adjusted |
 | DELETE | `/pedidos/<id>/detalles/<producto_id>` | - | Removes the line and gives the stock back. 409 if it is the last line (cancel the order instead) |
 
 ## Reportes (reports)

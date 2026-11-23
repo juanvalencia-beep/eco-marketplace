@@ -1,0 +1,13 @@
+{
+  // Panel de pruebas (ícono del matraz): muestra TC-01 a TC-15 y las pruebas de la API
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["tests"],
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  },
+  "files.associations": {
+    "*.sql": "sql"
+  }
+}

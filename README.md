@@ -16,6 +16,8 @@ The online version uses SQLite in the temporary folder of Vercel and loads the s
 
 Final report (PDF): [docs/report/project_report.pdf](docs/report/project_report.pdf) (LaTeX source: `docs/report/project_report.tex`). The project advance report is in `docs/report/project_advance.pdf`.
 
+Demo guide in Spanish for Visual Studio Code (how to run it and what to show for each evaluation criterion): [GUIA_DEMO.md](GUIA_DEMO.md).
+
 ## Structure
 
 ```
@@ -39,9 +41,9 @@ vercel.json      Vercel configuration
 Six tables: `cliente`, `tienda`, `producto`, `inventario`, `pedido` and `detalle_pedido`.
 
 - `inventario` resolves the many-to-many relation between stores and products (composite key `tienda_id, producto_id`).
-- An order is split in a header and its lines: `pedido` keeps who bought, in which store and when, and `detalle_pedido` has one row per product with the quantity and the unit price at the moment of the purchase (composite key `pedido_id, producto_id`). Copying the price keeps old orders correct when a product price changes later. Deleting an order deletes its lines (`ON DELETE CASCADE`); a product that appears in an order can't be deleted (`ON DELETE RESTRICT`).
+- An order is split in a header and its lines: `pedido` keeps who bought, in which store and when, and `detalle_pedido` has one row per product with the quantity bought (`cantidad_comprada`) and the unit price at the moment of the purchase (composite key `pedido_id, producto_id`). Copying the price keeps old orders correct when a product price changes later. Every foreign key is `ON DELETE RESTRICT`, as in the design document: to cancel an order the API deletes its lines and then the header in the same transaction, and a product that appears in an order can't be deleted.
 
-The schema is in 3NF and all the constraints have names (`pk_`, `fk_`, `uq_`, `ck_`, `idx_`).
+The schema follows the team's Database Design Specification (3NF, naming rules of its Annex B). `precio_unitario` (in `producto` and `detalle_pedido`) is an extension added for the totals and sales reports. All the constraints have names (`pk_`, `fk_`, `uq_`, `ck_`, `idx_`).
 
 ```mermaid
 erDiagram
@@ -83,7 +85,7 @@ erDiagram
     DETALLE_PEDIDO {
         int pedido_id PK,FK
         int producto_id PK,FK
-        decimal cantidad "CHECK > 0"
+        decimal cantidad_comprada "CHECK > 0"
         decimal precio_unitario "CHECK >= 0"
     }
 ```
@@ -118,7 +120,7 @@ python app.py
 python -m pytest -v
 ```
 
-`tests/test_database.py` has the 13 test cases of the design document (TC-01 to TC-13) plus TC-14 to TC-17 for the order lines (several products per order, one line per product, cascade and restrict), run directly on the SQL schema. `tests/test_api.py` tests every CRUD operation of the API, the order lines, the transactions (a failing line rolls back the whole order) and the reports.
+`tests/test_database.py` has the 15 test cases of the Database Design Specification (TC-01 to TC-15, including the ones for `detalle_pedido`), run directly on the SQL schema, plus two extra checks (order total and `ON DELETE RESTRICT`). `tests/test_api.py` tests every CRUD operation of the API, the order lines, the transactions (a failing line rolls back the whole order) and the reports.
 
 ## Endpoints
 

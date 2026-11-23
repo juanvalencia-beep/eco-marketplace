@@ -1,0 +1,32 @@
+{
+  // Terminal > Ejecutar tarea... (o Ctrl+Shift+P > "Tasks: Run Task")
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Instalar dependencias",
+      "type": "shell",
+      "command": "python -m pip install -r requirements.txt",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cargar datos de ejemplo",
+      "type": "shell",
+      "command": "python seed.py",
+      "problemMatcher": []
+    },
+    {
+      "label": "Ejecutar la app",
+      "type": "shell",
+      "command": "python app.py",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Ejecutar pruebas",
+      "type": "shell",
+      "command": "python -m pytest -v",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}
