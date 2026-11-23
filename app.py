@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import HTTPException
 
 from models import db
+from openapi import SPEC, SWAGGER_HTML
 from routes import api
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -51,6 +52,19 @@ def create_app(database_url=None):
     @app.route('/')
     def index():
         return send_from_directory(STATIC_DIR, 'index.html')
+
+    @app.route('/presentation')
+    @app.route('/presentation/')
+    def presentation():
+        return send_from_directory(os.path.join(STATIC_DIR, 'presentation'), 'index.html')
+
+    @app.route('/api/openapi.json')
+    def openapi_spec():
+        return jsonify(SPEC)
+
+    @app.route('/api/docs')
+    def api_docs():
+        return SWAGGER_HTML
 
     @app.errorhandler(HTTPException)
     def http_error(error):

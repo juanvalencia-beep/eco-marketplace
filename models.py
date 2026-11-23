@@ -1,3 +1,5 @@
+from decimal import ROUND_HALF_UP, Decimal
+
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -62,9 +64,11 @@ class Producto(db.Model):
     producto_id = db.Column(db.Integer)
     nombre = db.Column(db.String(100), nullable=False)
     unidad_medida = db.Column(db.String(20), nullable=False)
+    precio_unitario = db.Column(db.Numeric(10, 2), nullable=False, default=0, server_default='0')
 
     __table_args__ = (
         db.PrimaryKeyConstraint('producto_id', name='pk_producto'),
+        db.CheckConstraint('precio_unitario >= 0', name='ck_producto_precio_unitario_no_negativo'),
         {'sqlite_autoincrement': True},
     )
 
@@ -73,6 +77,7 @@ class Producto(db.Model):
             'producto_id': self.producto_id,
             'nombre': self.nombre,
             'unidad_medida': self.unidad_medida,
+            'precio_unitario': money(self.precio_unitario),
         }
 
 
@@ -105,42 +110,94 @@ class Inventario(db.Model):
 
 
 class Pedido(db.Model):
+    """Order header: who bought, where and when. The products are in DetallePedido."""
     __tablename__ = 'pedido'
 
     pedido_id = db.Column(db.Integer)
     fecha_exacta = db.Column(db.DateTime, nullable=False)
-    cantidad_comprada = db.Column(db.Numeric(10, 2), nullable=False)
     cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.cliente_id', name='fk_pedido_cliente',
                                                      ondelete='RESTRICT'), nullable=False)
     tienda_id = db.Column(db.Integer, db.ForeignKey('tienda.tienda_id', name='fk_pedido_tienda',
                                                     ondelete='RESTRICT'), nullable=False)
-    producto_id = db.Column(db.Integer, db.ForeignKey('producto.producto_id', name='fk_pedido_producto',
-                                                      ondelete='RESTRICT'), nullable=False)
 
     __table_args__ = (
         db.PrimaryKeyConstraint('pedido_id', name='pk_pedido'),
-        db.CheckConstraint('cantidad_comprada > 0', name='ck_pedido_cantidad_comprada_positiva'),
         db.Index('idx_pedido_cliente_id', 'cliente_id'),
         db.Index('idx_pedido_tienda_id', 'tienda_id'),
-        db.Index('idx_pedido_producto_id', 'producto_id'),
+        db.Index('idx_pedido_fecha_exacta', 'fecha_exacta'),
         {'sqlite_autoincrement': True},
     )
 
     cliente = db.relationship('Cliente')
     tienda = db.relationship('Tienda')
+    detalles = db.relationship('DetallePedido', back_populates='pedido', cascade='all, delete-orphan',
+                               passive_deletes=True, order_by='DetallePedido.producto_id')
+
+    @property
+    def total(self):
+        return sum((d.subtotal for d in self.detalles), Decimal('0'))
+
+    @property
+    def cantidad_total(self):
+        return sum((d.cantidad for d in self.detalles), Decimal('0'))
+
+    def to_dict(self, with_detalles=True):
+        data = {
+            'pedido_id': self.pedido_id,
+            'fecha_exacta': self.fecha_exacta.isoformat(timespec='seconds'),
+            'cliente_id': self.cliente_id,
+            'tienda_id': self.tienda_id,
+            'nombre_completo': self.cliente.nombre_completo,
+            'nombre_sucursal': self.tienda.nombre_sucursal,
+            'num_productos': len(self.detalles),
+            'cantidad_total': money(self.cantidad_total),
+            'total': money(self.total),
+            'puntos_ganados': sum(d.puntos for d in self.detalles),
+        }
+        if with_detalles:
+            data['detalles'] = [d.to_dict() for d in self.detalles]
+        return data
+
+
+class DetallePedido(db.Model):
+    """Order line: one product of an order. The price is copied from the product when the
+    order is made, so changing a product price later does not change old orders."""
+    __tablename__ = 'detalle_pedido'
+
+    pedido_id = db.Column(db.Integer, db.ForeignKey('pedido.pedido_id', name='fk_detalle_pedido_pedido',
+                                                    ondelete='CASCADE'), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey('producto.producto_id', name='fk_detalle_pedido_producto',
+                                                      ondelete='RESTRICT'), nullable=False)
+    cantidad = db.Column(db.Numeric(10, 2), nullable=False)
+    precio_unitario = db.Column(db.Numeric(10, 2), nullable=False)
+
+    __table_args__ = (
+        db.PrimaryKeyConstraint('pedido_id', 'producto_id', name='pk_detalle_pedido'),
+        db.CheckConstraint('cantidad > 0', name='ck_detalle_pedido_cantidad_positiva'),
+        db.CheckConstraint('precio_unitario >= 0', name='ck_detalle_pedido_precio_unitario_no_negativo'),
+        db.Index('idx_detalle_pedido_producto_id', 'producto_id'),
+    )
+
+    pedido = db.relationship('Pedido', back_populates='detalles')
     producto = db.relationship('Producto')
+
+    @property
+    def subtotal(self):
+        # rounded half up to cents, the same rule the reports use in SQL
+        return (Decimal(self.cantidad) * Decimal(self.precio_unitario)).quantize(Decimal('0.01'), ROUND_HALF_UP)
+
+    @property
+    def puntos(self):
+        return points_for(self.cantidad)
 
     def to_dict(self):
         return {
             'pedido_id': self.pedido_id,
-            'fecha_exacta': self.fecha_exacta.isoformat(timespec='seconds'),
-            'cantidad_comprada': money(self.cantidad_comprada),
-            'cliente_id': self.cliente_id,
-            'tienda_id': self.tienda_id,
             'producto_id': self.producto_id,
-            'nombre_completo': self.cliente.nombre_completo,
-            'nombre_sucursal': self.tienda.nombre_sucursal,
             'nombre_producto': self.producto.nombre,
             'unidad_medida': self.producto.unidad_medida,
-            'puntos_ganados': points_for(self.cantidad_comprada),
+            'cantidad': money(self.cantidad),
+            'precio_unitario': money(self.precio_unitario),
+            'subtotal': money(self.subtotal),
+            'puntos': self.puntos,
         }

@@ -55,8 +55,8 @@ def app(tmp_path):
             Cliente(nombre_completo='Carlos Andrade', correo_electronico='carlos.andrade@example.com'),
             Tienda(nombre_sucursal='Sucursal Centro', direccion='Av. Amazonas N24-03'),
             Tienda(nombre_sucursal='Sucursal Norte', direccion='Av. de la Prensa N45-120'),
-            Producto(nombre='Detergente líquido', unidad_medida='liters'),
-            Producto(nombre='Avena', unidad_medida='kg'),
+            Producto(nombre='Detergente líquido', unidad_medida='liters', precio_unitario=Decimal('2.80')),
+            Producto(nombre='Avena', unidad_medida='kg', precio_unitario=Decimal('3.20')),
         ])
         db.session.flush()
         db.session.add_all([
