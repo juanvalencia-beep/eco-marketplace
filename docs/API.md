@@ -2,6 +2,8 @@
 
 Base URL: `http://127.0.0.1:5000/api`
 
+Interactive documentation (Swagger UI): `http://127.0.0.1:5000/api/docs`. The OpenAPI 3 spec is at `/api/openapi.json` and can be imported into Postman.
+
 All requests and responses use JSON. Errors always come as `{"error": "message"}`.
 
 | Code | When |
@@ -12,7 +14,7 @@ All requests and responses use JSON. Errors always come as `{"error": "message"}
 | 404 | The record (or a referenced record) does not exist |
 | 409 | Conflict with a constraint: duplicate email, duplicate inventory row, not enough stock, or delete blocked by `ON DELETE RESTRICT` |
 
-Decimals (`cantidad_stock`, `cantidad_comprada`) are returned as numbers with 2 decimals.
+Decimals (`cantidad_stock`, `cantidad`, `precio_unitario`, `subtotal`, `total`) are returned as numbers with 2 decimals.
 Dates (`fecha_exacta`) are returned as `YYYY-MM-DDTHH:MM:SS`.
 
 ## Clientes (customers)
@@ -51,12 +53,12 @@ Customer object:
 |--------|-------|------|
 | GET | `/productos` | - |
 | GET | `/productos/<id>` | - |
-| POST | `/productos` | `nombre`, `unidad_medida` |
-| PUT | `/productos/<id>` | any of `nombre`, `unidad_medida` |
-| DELETE | `/productos/<id>` | - (409 if it has inventory or orders) |
+| POST | `/productos` | `nombre`, `unidad_medida`, `precio_unitario` |
+| PUT | `/productos/<id>` | any of `nombre`, `unidad_medida`, `precio_unitario` |
+| DELETE | `/productos/<id>` | - (409 if it has inventory or appears in an order line) |
 
 ```json
-{"producto_id": 1, "nombre": "Detergente líquido", "unidad_medida": "liters"}
+{"producto_id": 1, "nombre": "Detergente líquido", "unidad_medida": "liters", "precio_unitario": 2.8}
 ```
 
 ## Inventario (stock per store)
@@ -77,28 +79,57 @@ Customer object:
 
 ## Pedidos (refill orders)
 
+An order is split in two tables: `pedido` is the header (customer, store, date) and `detalle_pedido` has one line per product (quantity and the unit price at the moment of the purchase). The price always comes from the product in the database, never from the request.
+
 | Method | Route | Body | Notes |
 |--------|-------|------|-------|
-| GET | `/pedidos` | - | Newest first |
+| GET | `/pedidos` | - | Newest first, each order with its lines. Optional `?cliente_id=` and `?tienda_id=` |
 | GET | `/pedidos/<id>` | - | |
-| POST | `/pedidos` | `cliente_id`, `tienda_id`, `producto_id`, `cantidad_comprada`, optional `fecha_exacta` | One transaction: checks the stock, saves the order, subtracts the stock (FR-05) and adds eco-points |
-| DELETE | `/pedidos/<id>` | - | Cancels the order: gives the stock back and removes the points |
+| POST | `/pedidos` | `cliente_id`, `tienda_id`, `detalles: [{producto_id, cantidad}, ...]`, optional `fecha_exacta` | One transaction (FR-05): saves the header and every line, subtracts the stock of each line and adds the eco-points. If one line fails nothing is saved |
+| PUT | `/pedidos/<id>` | `fecha_exacta` | Only the date can change. Customer and store can't (the stock already moved in that store) |
+| DELETE | `/pedidos/<id>` | - | Cancels the order: gives back the stock of every line and removes the points. The lines are deleted by `ON DELETE CASCADE` |
 
-Orders are not updated with PUT, because changing an order after the stock was moved would break the inventory history. To fix an order it is cancelled and created again.
+Eco-points rule: the customer earns 10 points for each unit bought, rounded down per line (`int(cantidad * 10)`). 2.50 liters = 25 points.
 
-Eco-points rule: the customer earns 10 points for each unit bought, rounded down (`int(cantidad_comprada * 10)`). 2.50 liters = 25 points.
+POST errors: 400 if `detalles` is empty, has more than 50 lines, repeats a product, or a `cantidad` is not between 0.01 and 10000; 404 if the customer, store or a product does not exist; 409 if the store has no inventory row for a product or the stock is not enough.
 
-POST errors: 404 if the customer, store or product does not exist; 409 if the store has no inventory row for that product or the stock is not enough; 400 if `cantidad_comprada <= 0`.
-
+Request:
 ```json
-{"pedido_id": 1, "fecha_exacta": "2026-11-16T10:30:00", "cantidad_comprada": 2.5,
- "cliente_id": 1, "tienda_id": 1, "producto_id": 1,
- "nombre_completo": "Ana Pérez", "nombre_sucursal": "Sucursal Centro",
- "nombre_producto": "Detergente líquido", "unidad_medida": "liters", "puntos_ganados": 25}
+{"cliente_id": 1, "tienda_id": 1,
+ "detalles": [{"producto_id": 1, "cantidad": 2.5}, {"producto_id": 2, "cantidad": 1.25}]}
 ```
 
-## Other
+Response (201):
+```json
+{"pedido_id": 29, "fecha_exacta": "2026-11-23T10:30:00", "cliente_id": 1, "tienda_id": 1,
+ "nombre_completo": "Ana Pérez", "nombre_sucursal": "Sucursal Centro",
+ "num_productos": 2, "cantidad_total": 3.75, "total": 11.0, "puntos_ganados": 37,
+ "detalles": [
+   {"pedido_id": 29, "producto_id": 1, "nombre_producto": "Detergente líquido", "unidad_medida": "liters",
+    "cantidad": 2.5, "precio_unitario": 2.8, "subtotal": 7.0, "puntos": 25},
+   {"pedido_id": 29, "producto_id": 2, "nombre_producto": "Avena", "unidad_medida": "kg",
+    "cantidad": 1.25, "precio_unitario": 3.2, "subtotal": 4.0, "puntos": 12}]}
+```
 
-| Method | Route | Notes |
-|--------|-------|-------|
-| GET | `/resumen` | Counts for the dashboard: `clientes`, `tiendas`, `productos`, `pedidos`, `stock_bajo` |
+## Detalle de pedido (order lines)
+
+| Method | Route | Body | Notes |
+|--------|-------|------|-------|
+| GET | `/pedidos/<id>/detalles` | - | Lines of the order |
+| GET | `/pedidos/<id>/detalles/<producto_id>` | - | One line |
+| POST | `/pedidos/<id>/detalles` | `producto_id`, `cantidad` | Adds a product: takes the stock and adds points. 409 if the product is already in the order (update that line instead) or there is not enough stock |
+| PUT | `/pedidos/<id>/detalles/<producto_id>` | `cantidad` | Changes the quantity: a bigger quantity takes the difference from the stock, a smaller one gives it back. Points are adjusted |
+| DELETE | `/pedidos/<id>/detalles/<producto_id>` | - | Removes the line and gives the stock back. 409 if it is the last line (cancel the order instead) |
+
+## Reportes (reports)
+
+`desde` and `hasta` (`YYYY-MM-DD`, both included) filter by the order date. `limite` is 5 by default (1 to 100).
+
+| Method | Route | Returns |
+|--------|-------|---------|
+| GET | `/reportes/ventas-por-tienda?desde=&hasta=` | Per store: `pedidos`, `ingresos`, `ticket_promedio`. Stores without sales appear with 0 |
+| GET | `/reportes/productos-mas-vendidos?limite=&desde=&hasta=` | Per product: `cantidad_vendida`, `ingresos`, `pedidos`, ordered by revenue |
+| GET | `/reportes/top-clientes?limite=&desde=&hasta=` | Per customer: `pedidos`, `total_gastado`, `puntos_ecologicos` |
+| GET | `/reportes/ventas-diarias?dias=30` or `?desde=&hasta=` | One row per day of the last `dias` days or of the range (up to 366 days): `fecha`, `pedidos`, `ingresos` (days without sales have 0) |
+| GET | `/resumen` | Dashboard counters: `clientes`, `tiendas`, `productos`, `pedidos`, `stock_bajo`, `ingresos`, `puntos_ecologicos` |
+| GET | `/inventario/stock-bajo?limite=10` | Low stock report (FR-06) |

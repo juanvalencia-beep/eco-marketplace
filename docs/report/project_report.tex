@@ -1,0 +1,1068 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{float}
+\captionsetup{font={small,it},labelfont=bf,skip=4pt}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.8em}
+\titlespacing*{\subsection}{0pt}{1.2em}{0.5em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue!50!black,
+  pdftitle={Final Project Report - Eco-Marketplace}}
+
+\lstset{basicstyle=\ttfamily\footnotesize, breaklines=true, frame=single,
+  columns=fullflexible, keepspaces=true, showstringspaces=false,
+  literate={é}{{\'e}}1 {í}{{\'i}}1 {á}{{\'a}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1}
+
+\setlength{\parindent}{0pt}
+\let\oldus\_
+\renewcommand{\_}{\oldus\allowbreak}
+\sloppy
+\setlength{\parskip}{0.6em}
+
+\newcommand{\repourl}{https://github.com/juanvalencia-beep/eco-marketplace}
+\newcommand{\demourl}{https://ecomarketplace.vercel.app}
+
+\begin{document}
+
+% ============================================================ title page
+\begin{titlepage}
+\begin{center}
+  \vspace*{3cm}
+  {\LARGE Final Project Report}\\[0.8em]
+  {\large Simplified Management System for Eco-Marketplace and Local Refill Stations}\\[3em]
+  Jonatan Vazques\\[0.5em]
+  Juan Valencia\\[0.5em]
+  David Guanoluisa\\[2.5em]
+  Databases\\[0.5em]
+  November 23, 2026\\[4em]
+  \begin{tabular}{rl}
+    Repository: & \url{\repourl} \\
+    Online demo: & \url{\demourl} \\
+    API documentation: & \url{\demourl/api/docs} \\
+    Presentation: & \url{\demourl/presentation} \\
+  \end{tabular}
+\end{center}
+\end{titlepage}
+
+\setcounter{tocdepth}{1}
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Introduction and Requirements}
+
+Eco-Marketplace is a small network of stores in Quito that sell eco-friendly products in bulk:
+the customer brings a container and refills it with detergent, oats, rice, shampoo and other
+products. Our system helps the staff of these stores to keep the product catalog with prices, the
+stock of every product in every store, the registered customers with their eco-points, and the
+refill orders. It also produces sales reports.
+
+The project has three layers, the same ones used in the course labs:
+
+\begin{itemize}[itemsep=0.1em]
+  \item a relational database with six tables (SQLite by default, MySQL also supported),
+  \item a REST API (APIDB) made with Flask and Flask-SQLAlchemy, documented with Swagger,
+  \item a responsive web interface (GUI) in HTML, CSS and JavaScript that only talks to the API.
+\end{itemize}
+
+This document is the final report. It continues the project advance of November 16, 2026, and it
+explains what we changed after the feedback of the professor, the final design of the database,
+the API, the tests, the GUI and the reports, and also the problems we found on the way.
+
+\subsection{Requirements}
+
+The requirements and the test cases TC-01 to TC-13 come from our design document. We kept the same
+IDs, and we added TC-14 to TC-17 for the new order lines (Section~\ref{sec:testing}).
+
+\begin{center}
+\small
+\begin{tabular}{p{1.4cm} p{10.4cm} p{2.6cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Test cases} \\
+\midrule
+FR-01 & Register customers; a new customer starts with 0 eco-points. & TC-01 \\
+FR-02 & Manage the stock of each product in each store. & TC-02, TC-04 \\
+FR-03 & Register refill orders with valid data (now with one or more products). & TC-05--07, TC-14 \\
+FR-04 & Show the order history of a customer, newest first. & TC-08 \\
+FR-05 & Subtract the stock in the same transaction as the order. & TC-09, TC-10 \\
+FR-06 & Low stock report (less than 10 units). & TC-11 \\
+NFR-01 & 50 concurrent orders on the same product in less than 2 seconds, no lost updates. & TC-03 \\
+NFR-02 & Data integrity: unique email, keys and check constraints. & TC-12, TC-15--17 \\
+NFR-03 & One SQL script builds the whole schema with all its constraints. & TC-13 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Deliverables}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright}p{4.2cm} >{\raggedright}p{6.6cm} p{3.6cm}}
+\toprule
+\textbf{Deliverable} & \textbf{Where} & \textbf{Report section} \\
+\midrule
+Database schema (ER diagram and SQL scripts) & \texttt{database/schema\_sqlite.sql}, \texttt{database/schema\_mysql.sql} & 3, 4 \\
+API documentation & Swagger UI at \texttt{/api/docs}, \texttt{/api/openapi.json}, \texttt{docs/API.md} & 5 \\
+API implementation & \texttt{models.py}, \texttt{routes.py}, \texttt{app.py} & 6, 7 \\
+Responsive GUI with CRUD and reports & \texttt{static/} & 8, 9 \\
+Project report & \texttt{docs/report/project\_report.tex} (this document) & -- \\
+Repository & \url{\repourl} & 10 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{Changes Since the Project Advance}
+
+\subsection{Feedback from the professor}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright}p{3cm} >{\raggedright}p{4.6cm} >{\raggedright\arraybackslash}p{7.2cm}}
+\toprule
+\textbf{Item} & \textbf{Feedback} & \textbf{What we did} \\
+\midrule
+Database design & Missing ``Detalle de Pedido'': an order could only have one product. & New table \texttt{detalle\_pedido}; \texttt{pedido} is now only the order header. Products got a price. \\
+API (70\%) & Test cases OK. & Completed the CRUD for all six tables, order lines, reports and Swagger documentation. 71 automated tests pass. \\
+GUI (50\%) & OK. & Redesigned: cart with several products, order detail panel, reports page with charts, CSV export and print, mobile layout. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{The order model: before and after}
+
+The feedback was correct. In the advance, \texttt{pedido} had the columns \texttt{producto\_id} and
+\texttt{cantidad\_comprada}, so one order was exactly one product. A customer who refills detergent
+and oats in the same visit needed two orders, with two dates and no common total. That is not how a
+real sale works, and it also mixed two different things in one table: data about the visit
+(customer, store, date) and data about each product bought.
+
+We split the order in a \textbf{header} and its \textbf{lines}, the classic order / order-detail
+design:
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright}p{2.6cm} >{\raggedright}p{5.6cm} >{\raggedright\arraybackslash}p{6.6cm}}
+\toprule
+\textbf{Table} & \textbf{Advance (5 tables)} & \textbf{Final (6 tables)} \\
+\midrule
+\texttt{pedido} & \texttt{pedido\_id}, \texttt{fecha\_exacta}, \texttt{cantidad\_comprada}, \texttt{cliente\_id}, \texttt{tienda\_id}, \texttt{producto\_id} & \texttt{pedido\_id}, \texttt{fecha\_exacta}, \texttt{cliente\_id}, \texttt{tienda\_id} (header only) \\
+\texttt{detalle\_pedido} & -- & \texttt{pedido\_id}, \texttt{producto\_id}, \texttt{cantidad}, \texttt{precio\_unitario}; PK (\texttt{pedido\_id}, \texttt{producto\_id}) \\
+\texttt{producto} & \texttt{producto\_id}, \texttt{nombre}, \texttt{unidad\_medida} & + \texttt{precio\_unitario} DECIMAL(10,2), CHECK $\geq 0$ \\
+\midrule
+Order total & Not possible (no prices) & Sum of the lines: $\sum$ round(\texttt{cantidad} $\times$ \texttt{precio\_unitario}) \\
+Products per order & Exactly one & One or more (up to 50 in the API) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The constraint \texttt{fk\_pedido\_producto}, the check \texttt{ck\_pedido\_cantidad\_comprada\_positiva}
+and the index \texttt{idx\_pedido\_producto\_id} moved to the new table as
+\texttt{fk\_detalle\_pedido\_producto}, \texttt{ck\_detalle\_pedido\_cantidad\_positiva} and
+\texttt{idx\_detalle\_pedido\_producto\_id}.
+
+The same request, before and after:
+
+\begin{lstlisting}
+-- Advance: one product per order
+POST /api/pedidos
+{"cliente_id": 1, "tienda_id": 1, "producto_id": 1, "cantidad_comprada": 2.5}
+
+-- Final: one order, several lines
+POST /api/pedidos
+{"cliente_id": 1, "tienda_id": 1,
+ "detalles": [{"producto_id": 1, "cantidad": 2.5}, {"producto_id": 2, "cantidad": 1.25}]}
+\end{lstlisting}
+
+\subsection{Other changes}
+
+\begin{itemize}[itemsep=0.15em]
+  \item \textbf{API:} CRUD for order lines (\texttt{/api/pedidos/<id>/detalles}), \texttt{PUT} to change
+  the date of an order, orders with several lines in one transaction, filters on the order list,
+  four sales reports (\texttt{/api/reportes/...}) and Swagger UI at \texttt{/api/docs}.
+  \item \textbf{GUI:} new design with seven pages, a cart to build orders line by line, an order
+  detail drawer to edit lines, a reports page with SVG charts, CSV export and print, and a mobile
+  layout.
+  \item \textbf{Tests:} from 49 to 71 automated tests (TC-14 to TC-17 and 18 new API tests).
+  \item \textbf{Review fixes:} a rounding difference between order totals and reports, and a
+  possible overflow of the eco-points (Section~\ref{sec:rounding}).
+  \item \textbf{Deployment:} the system runs online on Vercel, and a web presentation is served at
+  \texttt{/presentation}.
+\end{itemize}
+
+% ============================================================
+\section{Database Design}
+
+\subsection{Entities and relationships}
+
+The database has six tables. Four of them are the main entities of the business
+(\texttt{cliente}, \texttt{tienda}, \texttt{producto}, \texttt{pedido}) and two are associative
+tables that solve many-to-many relationships:
+
+\begin{itemize}[itemsep=0.15em]
+  \item \texttt{inventario} joins stores and products: a store stocks many products and a product
+  is stocked in many stores. Each row has the stock of one product in one store.
+  \item \texttt{detalle\_pedido} joins orders and products: an order has many products and a
+  product appears in many orders. Each row is one line of an order.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.74\linewidth]{img/er_diagram_final.png}
+  \caption{Final ER diagram in crow's foot notation. ``$||$'' means exactly one, ``o$<$'' zero or
+  many and ``$|<$'' one or many. New elements are marked ``new''.}
+\end{figure}
+
+The cardinalities are:
+
+\begin{itemize}[itemsep=0.1em]
+  \item A customer places 0..N orders; each order belongs to exactly 1 customer.
+  \item A store receives 0..N orders; each order is made in exactly 1 store.
+  \item An order contains 1..N lines; each line belongs to exactly 1 order.
+  \item A product is sold in 0..N lines; each line is for exactly 1 product.
+  \item A store stocks 0..N inventory rows, and a product is stocked in 0..N inventory rows.
+\end{itemize}
+
+The minimum of ``1..N lines per order'' cannot be written as a simple constraint in SQL (the header
+is inserted before its lines). The API enforces it: \texttt{POST /api/pedidos} needs at least one
+line, and the last line of an order cannot be deleted (the order has to be cancelled instead).
+
+\subsection{Logical model}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{img/logical_model_final.png}
+  \caption{Logical model with data types, keys and checks. NN = NOT NULL, UQ = UNIQUE.}
+\end{figure}
+
+\subsection{Normalization (3NF)}
+
+\begin{itemize}[itemsep=0.2em]
+  \item \textbf{1NF.} All values are atomic. An order no longer needs repeating groups such as
+  ``product 1, product 2, \ldots'': each product is its own row in \texttt{detalle\_pedido}.
+  \item \textbf{2NF.} The two tables with composite keys have no partial dependencies.
+  \texttt{cantidad\_stock} depends on the store \emph{and} the product. \texttt{cantidad} and
+  \texttt{precio\_unitario} of a line depend on the order \emph{and} the product: the same product
+  can have a different quantity and price in another order.
+  \item \textbf{3NF.} There are no transitive dependencies. The name and unit of a product are only
+  in \texttt{producto}; the name of the customer and of the store are only in their tables. The
+  order total and the points of an order are not stored, because they can be calculated from the
+  lines; storing them would create update anomalies when a line changes.
+\end{itemize}
+
+\subsection{Design decisions}
+
+\textbf{Composite primary keys.} \texttt{inventario} and \texttt{detalle\_pedido} use the pair of
+foreign keys as primary key instead of a new surrogate id. The pair is the natural identity of the
+row, and the key itself gives us a business rule for free: a store has only one stock row per
+product (TC-04), and an order has only one line per product (TC-15). If a customer wants more of a
+product, the quantity of the line changes; there are no two lines for the same product. The REST
+routes also follow this key: \texttt{/inventario/<tienda\_id>/<producto\_id>} and
+\texttt{/pedidos/<pedido\_id>/detalles/<producto\_id>}.
+
+\textbf{The price is copied into the line.} \texttt{detalle\_pedido.precio\_unitario} looks like a
+duplicate of \texttt{producto.precio\_unitario}, but it is a different fact: the price \emph{at the
+moment of the sale}. Prices change. If the line only pointed to the product, increasing the price
+of detergent today would also change the total of every old order and all the past sales reports.
+With the copy, old orders keep the price that the customer really paid. The API always takes the
+price from the database, never from the request, so a client cannot choose its own price. This is
+checked by the API test \texttt{test\_price\_is\_copied\_into\_the\_order\_line}.
+
+\textbf{CASCADE vs RESTRICT.} We chose the delete rule of each foreign key by asking ``does the
+child make sense without the parent?''
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright}p{4.6cm} p{1.9cm} >{\raggedright\arraybackslash}p{8.2cm}}
+\toprule
+\textbf{Foreign key} & \textbf{On delete} & \textbf{Reason} \\
+\midrule
+\texttt{fk\_detalle\_pedido\_pedido} & CASCADE & A line is part of its order. Cancelling the order removes its lines (TC-16). \\
+\texttt{fk\_detalle\_pedido\_producto} & RESTRICT & A product that was sold cannot disappear, or the sales history would be lost (TC-17). \\
+\texttt{fk\_pedido\_cliente}, \texttt{fk\_pedido\_tienda} & RESTRICT & Customers and stores with orders are kept for the history. \\
+\texttt{fk\_inventario\_tienda}, \texttt{fk\_inventario\_producto} & RESTRICT & Stock rows must be removed on purpose before deleting a store or product. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Data types.} Quantities and prices are \texttt{DECIMAL(10,2)}, because products are sold
+by weight or volume (2.50 liters) and money must not use binary floating point. Eco-points are an
+\texttt{INT}. \texttt{puntos\_ecologicos} is a running balance in \texttt{cliente} (and not only a
+sum of the orders) because the staff can adjust it by hand, for example when a customer uses points.
+
+% ============================================================
+\section{Database Implementation}
+
+The database runs on \textbf{SQLite}, which needs no server and is used for the project and the
+tests. The same schema is also written for \textbf{MySQL 8.0.16+}, and the API connects to MySQL
+only by changing the \texttt{DATABASE\_URL} variable.
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright}p{4.6cm} p{10cm}}
+\toprule
+\textbf{File} & \textbf{Content} \\
+\midrule
+\texttt{database/schema\_sqlite.sql} & Drops and creates the 6 tables, all named constraints and the 4 indexes in SQLite. \\
+\texttt{database/schema\_mysql.sql} & The same schema for MySQL (InnoDB, \texttt{AUTO\_INCREMENT}, utf8mb4). \\
+\texttt{models.py} & The same tables as SQLAlchemy models, with the same constraint names. \\
+\texttt{seed.py} & Loads sample data: 3 stores in Quito, 8 products with prices, 8 customers, 20 inventory rows and 28 orders with 57 order lines in the last 30 days. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Constraints}
+
+All the constraints have a name that follows our naming convention (\texttt{pk\_}, \texttt{fk\_},
+\texttt{uq\_}, \texttt{ck\_}, \texttt{idx\_}), so a database error says which rule was broken.
+
+\begin{center}
+\small
+\begin{longtable}{>{\raggedright}p{2.5cm} >{\raggedright}p{6.3cm} p{1.6cm} >{\raggedright\arraybackslash}p{4.3cm}}
+\toprule
+\textbf{Table} & \textbf{Constraint} & \textbf{Type} & \textbf{Rule} \\
+\midrule
+\endhead
+\texttt{cliente} & \texttt{pk\_cliente} & PK & \texttt{cliente\_id}, autoincrement \\
+ & \texttt{uq\_cliente\_correo\_electronico} & UNIQUE & one customer per email \\
+ & \texttt{ck\_cliente\_puntos\_ecologicos\_no\_negativo} & CHECK & \texttt{puntos\_ecologicos >= 0} \\
+\midrule
+\texttt{tienda} & \texttt{pk\_tienda} & PK & \texttt{tienda\_id}, autoincrement \\
+\midrule
+\texttt{producto} & \texttt{pk\_producto} & PK & \texttt{producto\_id}, autoincrement \\
+ & \texttt{ck\_producto\_precio\_unitario\_no\_negativo} & CHECK & \texttt{precio\_unitario >= 0} \\
+\midrule
+\texttt{inventario} & \texttt{pk\_inventario} & PK & (\texttt{tienda\_id}, \texttt{producto\_id}) \\
+ & \texttt{fk\_inventario\_tienda} & FK & $\to$ \texttt{tienda}, RESTRICT \\
+ & \texttt{fk\_inventario\_producto} & FK & $\to$ \texttt{producto}, RESTRICT \\
+ & \texttt{ck\_inventario\_cantidad\_stock\_no\_negativa} & CHECK & \texttt{cantidad\_stock >= 0} \\
+\midrule
+\texttt{pedido} & \texttt{pk\_pedido} & PK & \texttt{pedido\_id}, autoincrement \\
+ & \texttt{fk\_pedido\_cliente} & FK & $\to$ \texttt{cliente}, RESTRICT \\
+ & \texttt{fk\_pedido\_tienda} & FK & $\to$ \texttt{tienda}, RESTRICT \\
+\midrule
+\texttt{detalle\_pedido} & \texttt{pk\_detalle\_pedido} & PK & (\texttt{pedido\_id}, \texttt{producto\_id}) \\
+ & \texttt{fk\_detalle\_pedido\_pedido} & FK & $\to$ \texttt{pedido}, CASCADE \\
+ & \texttt{fk\_detalle\_pedido\_producto} & FK & $\to$ \texttt{producto}, RESTRICT \\
+ & \texttt{ck\_detalle\_pedido\_cantidad\_positiva} & CHECK & \texttt{cantidad > 0} \\
+ & \texttt{ck\_detalle\_pedido\_precio\_unitario\_no\_negativo} & CHECK & \texttt{precio\_unitario >= 0} \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+All columns are \texttt{NOT NULL}. The check \texttt{cantidad\_stock >= 0} is very important: it is
+the last protection against selling more than the store has (TC-10).
+
+\subsection{Indexes}
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright}p{5.4cm} >{\raggedright\arraybackslash}p{9.4cm}}
+\toprule
+\textbf{Index} & \textbf{Used by} \\
+\midrule
+\texttt{idx\_pedido\_cliente\_id} & Order history of a customer (FR-04), top customers report. \\
+\texttt{idx\_pedido\_tienda\_id} & Filter orders by store, sales by store report. \\
+\texttt{idx\_pedido\_fecha\_exacta} & Ordering ``newest first'' and the date range of all reports. \\
+\texttt{idx\_detalle\_pedido\_producto\_id} & Best-selling products report, and the RESTRICT check when a product is deleted. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+We did not add an index on \texttt{detalle\_pedido.pedido\_id} or \texttt{inventario.tienda\_id}:
+they are the first column of the composite primary key, and the primary key index already serves
+searches by that column.
+
+\subsection{The new table in SQL}
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={\texttt{detalle\_pedido} in \texttt{schema\_sqlite.sql}.}]
+-- Order lines (detalle de pedido): one row per product of an order.
+-- precio_unitario is copied from producto when the order is made, so a later
+-- price change does not rewrite old orders. Deleting an order deletes its lines.
+CREATE TABLE detalle_pedido (
+    pedido_id        INTEGER        NOT NULL,
+    producto_id      INTEGER        NOT NULL,
+    cantidad         DECIMAL(10,2)  NOT NULL,
+    precio_unitario  DECIMAL(10,2)  NOT NULL,
+    CONSTRAINT pk_detalle_pedido PRIMARY KEY (pedido_id, producto_id),
+    CONSTRAINT fk_detalle_pedido_pedido FOREIGN KEY (pedido_id)
+        REFERENCES pedido (pedido_id) ON DELETE CASCADE,
+    CONSTRAINT fk_detalle_pedido_producto FOREIGN KEY (producto_id)
+        REFERENCES producto (producto_id) ON DELETE RESTRICT,
+    CONSTRAINT ck_detalle_pedido_cantidad_positiva CHECK (cantidad > 0),
+    CONSTRAINT ck_detalle_pedido_precio_unitario_no_negativo CHECK (precio_unitario >= 0)
+);
+\end{lstlisting}
+\end{minipage}
+
+\subsection{SQLite and MySQL details}
+
+\textbf{Foreign keys in SQLite.} SQLite does not check foreign keys unless
+\texttt{PRAGMA foreign\_keys = ON} is run, and the setting only lasts for one connection. The script
+runs it, and \texttt{app.py} has an SQLAlchemy \texttt{connect} event that runs it on every new
+connection. Without this, TC-06 (order for a customer that does not exist) and TC-17 (delete a
+product with orders) would fail, and \texttt{ON DELETE CASCADE} would not remove the lines.
+
+\textbf{Decimals in SQLite.} SQLite has no real \texttt{DECIMAL} type: it stores these values as
+floating point numbers. This caused the rounding problem explained in Section~\ref{sec:rounding}.
+MySQL stores exact decimals.
+
+\textbf{MySQL script.} \texttt{schema\_mysql.sql} creates the database \texttt{eco\_marketplace}
+with \texttt{utf8mb4}, uses InnoDB (needed for foreign keys and transactions) and
+\texttt{AUTO\_INCREMENT}. CHECK constraints are only enforced from MySQL 8.0.16, so that is the
+minimum version. MySQL always calls the primary key \texttt{PRIMARY}, so the names \texttt{pk\_*}
+only appear in SQLite. In the advance we ran the API against the MySQL 8.4 container of the labs
+with the same results as SQLite; the final script has the same structure with the new table.
+
+% ============================================================
+\section{API Design}
+
+The API follows REST. Each table is a resource with a plural Spanish name (the same as the table),
+the HTTP method says the operation, and all the data goes as JSON. All routes start with
+\texttt{/api}. The order lines are a sub-resource of the order
+(\texttt{/pedidos/<id>/detalles}), because a line does not exist without its order.
+
+\subsection{Status codes and errors}
+
+Every error has the same JSON shape, \texttt{\{"error": "message"\}}, also for unknown routes, so the
+GUI can always show the message to the user.
+
+\begin{center}
+\small
+\begin{tabular}{p{1.6cm} >{\raggedright\arraybackslash}p{13cm}}
+\toprule
+\textbf{Code} & \textbf{When} \\
+\midrule
+200 & OK (read, update, delete). \\
+201 & Created (\texttt{POST}). \\
+400 & Missing field, wrong type or invalid value: quantity $\leq 0$, empty \texttt{detalles}, more than 50 lines, the same product twice, a bad date. \\
+404 & The record, or a record it points to, does not exist. \\
+409 & Conflict with a rule of the data: duplicate email or inventory row, not enough stock, product not sold in that store, delete blocked by RESTRICT, last line of an order, eco-points over the maximum. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Endpoints}
+
+There are 37 operations on 19 paths. Decimals are returned as numbers with two decimals, and dates
+as \texttt{YYYY-MM-DDTHH:MM:SS}.
+
+\begin{center}
+\small
+\begin{longtable}{>{\raggedright}p{2.3cm} >{\raggedright}p{6cm} >{\raggedright\arraybackslash}p{6.4cm}}
+\toprule
+\textbf{Method} & \textbf{Route} & \textbf{Description} \\
+\midrule
+\endhead
+GET, POST & \texttt{/api/clientes} & List (search \texttt{?q=}) / create with 0 points (FR-01) \\
+GET, PUT, DELETE & \texttt{/api/clientes/<id>} & Read / update / delete (409 if it has orders) \\
+GET & \texttt{/api/clientes/<id>/pedidos} & Order history, newest first (FR-04) \\
+\midrule
+GET, POST & \texttt{/api/tiendas} & List / create stores \\
+GET, PUT, DELETE & \texttt{/api/tiendas/<id>} & Read / update / delete (409 if it has inventory or orders) \\
+\midrule
+GET, POST & \texttt{/api/productos} & List / create (\texttt{precio\_unitario} required) \\
+GET, PUT, DELETE & \texttt{/api/productos/<id>} & Read / update / delete (409 if it has inventory or order lines) \\
+\midrule
+GET, POST & \texttt{/api/inventario} & Stock of all stores (\texttt{?tienda\_id=}) / add a product to a store (FR-02) \\
+GET, PUT, DELETE & \texttt{/api/inventario/\allowbreak<tienda\_id>/<producto\_id>} & Read / change / remove one stock row \\
+GET & \texttt{/api/inventario/stock-bajo} & Low stock report, \texttt{?limite=10} (FR-06) \\
+\midrule
+GET, POST & \texttt{/api/pedidos} & List with lines (\texttt{?cliente\_id=}, \texttt{?tienda\_id=}) / create an order with its lines (FR-03, FR-05) \\
+GET & \texttt{/api/pedidos/<id>} & One order with its lines \\
+PUT & \texttt{/api/pedidos/<id>} & Change the date (customer and store cannot change) \\
+DELETE & \texttt{/api/pedidos/<id>} & Cancel: stock goes back, points are removed, lines cascade \\
+\midrule
+GET, POST & \texttt{/api/pedidos/<id>/detalles} & List the lines / add a product to the order \\
+GET, PUT, DELETE & \texttt{/api/pedidos/<id>/\allowbreak detalles/<producto\_id>} & Read / change the quantity / remove a line \\
+\midrule
+GET & \texttt{/api/reportes/ventas-por-tienda} & Orders, revenue and average ticket per store \\
+GET & \texttt{/api/reportes/\allowbreak productos-mas-vendidos} & Best-selling products by revenue \\
+GET & \texttt{/api/reportes/top-clientes} & Customers who spent the most \\
+GET & \texttt{/api/reportes/ventas-diarias} & Orders and revenue per day \\
+GET & \texttt{/api/resumen} & Counters for the dashboard \\
+\midrule
+GET & \texttt{/api/docs}, \texttt{/api/openapi.json} & Swagger UI and the OpenAPI 3 specification \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\subsection{JSON formats}
+
+Creating an order with two products. The client only sends ids and quantities; the prices, totals
+and points are calculated by the server:
+
+\begin{lstlisting}
+POST /api/pedidos
+{"cliente_id": 1, "tienda_id": 1,
+ "detalles": [{"producto_id": 1, "cantidad": 2.5}, {"producto_id": 2, "cantidad": 1.25}]}
+
+201 Created
+{"pedido_id": 29, "fecha_exacta": "2026-11-23T10:30:00", "cliente_id": 1, "tienda_id": 1,
+ "nombre_completo": "Ana Pérez", "nombre_sucursal": "Sucursal Centro",
+ "num_productos": 2, "cantidad_total": 3.75, "total": 11.0, "puntos_ganados": 37,
+ "detalles": [
+   {"pedido_id": 29, "producto_id": 1, "nombre_producto": "Detergente líquido",
+    "unidad_medida": "liters", "cantidad": 2.5, "precio_unitario": 2.8,
+    "subtotal": 7.0, "puntos": 25},
+   {"pedido_id": 29, "producto_id": 2, "nombre_producto": "Avena",
+    "unidad_medida": "kg", "cantidad": 1.25, "precio_unitario": 3.2,
+    "subtotal": 4.0, "puntos": 12}]}
+\end{lstlisting}
+
+Changing the quantity of one line, and two error answers:
+
+\begin{lstlisting}
+PUT /api/pedidos/29/detalles/1      {"cantidad": 3}
+200 OK   {"pedido_id": 29, "producto_id": 1, ..., "cantidad": 3.0, "subtotal": 8.4, "puntos": 30}
+
+POST /api/pedidos   (the second line asks for 50 kg of Avena, the store has 5)
+409 Conflict   {"error": "Not enough stock of Avena: available 5.00, requested 50.00"}
+
+POST /api/clientes  {"nombre_completo": "Ana P.", "correo_electronico": "ana.perez@example.com"}
+409 Conflict   {"error": "A customer with that email already exists"}
+\end{lstlisting}
+
+A report, for example sales by store:
+
+\begin{lstlisting}
+GET /api/reportes/ventas-por-tienda?desde=2026-11-01&hasta=2026-11-23
+200 OK
+[{"tienda_id": 2, "nombre_sucursal": "Sucursal Norte", "pedidos": 10,
+  "ingresos": 165.45, "ticket_promedio": 16.55}, ...]
+\end{lstlisting}
+
+\subsection{Swagger documentation}
+
+The API is documented with an OpenAPI 3 specification written in \texttt{openapi.py}. Flask serves
+it at \texttt{/api/openapi.json}, and \texttt{/api/docs} shows it with Swagger UI, where every
+endpoint can be tried from the browser. The same JSON file can be imported into Postman. A shorter
+text version is in \texttt{docs/API.md}.
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{0.42\linewidth}\vspace{0pt}
+    \centering
+    \includegraphics[width=\linewidth]{img/swagger.png}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.55\linewidth}\vspace{0pt}
+    \centering
+    \includegraphics[width=\linewidth]{img/swagger_post_pedidos.png}
+  \end{minipage}
+  \caption{Swagger UI at \texttt{/api/docs}. Left: the endpoint groups (the first four are
+  collapsed). Right: \texttt{POST /pedidos} with its description and example request body.}
+\end{figure}
+
+% ============================================================
+\section{API Implementation}
+
+The API uses \textbf{Flask 3.1} and \textbf{Flask-SQLAlchemy 3.1} (SQLAlchemy 2.0) on Python. The code
+is in four files:
+
+\begin{itemize}[itemsep=0.1em]
+  \item \texttt{models.py}: the six tables as SQLAlchemy classes, with the constraint names and a
+  \texttt{to\_dict()} method that builds the JSON of each record.
+  \item \texttt{routes.py}: a Flask blueprint with all the endpoints, validation and reports.
+  \item \texttt{app.py}: creates the app, turns on SQLite foreign keys, registers the error handlers
+  and serves the GUI, Swagger and the presentation.
+  \item \texttt{openapi.py}: the OpenAPI specification.
+\end{itemize}
+
+\subsection{Validation}
+
+Every value from the request goes through a small helper before it reaches the database:
+\texttt{text\_value} (required, trimmed, maximum length of the column), \texttt{int\_value} (a real
+integer; \texttt{true} is not accepted as 1), \texttt{decimal\_value} (a finite number that fits in
+\texttt{DECIMAL(10,2)}, rounded to 2 decimals), \texttt{email\_value} (basic format, saved in lower
+case) and \texttt{date\_value}. An order also needs a non-empty list of at most 50 lines, each
+product only once, and each quantity between 0.01 and 10000. Because of this, bad input returns a
+400 with a clear message and normally never reaches a database constraint.
+
+\subsection{Transactions}
+
+Creating an order changes three tables: it inserts the header and the lines, subtracts stock in
+\texttt{inventario}, and adds points in \texttt{cliente}. All of this is one transaction (FR-05).
+First we check everything that can be checked without writing (customer, store and every product
+exist, no repeated products); then we write, and if any step fails the whole order is rolled back.
+So if the second line has no stock, the first line is not saved either (API test
+\texttt{test\_create\_pedido\_one\_bad\_line\_rolls\_back\_everything}).
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Python, caption={Core of \texttt{POST /api/pedidos} in \texttt{routes.py}.}]
+try:
+    pedido = Pedido(fecha_exacta=fecha, cliente_id=cliente_id, tienda_id=tienda_id)
+    db.session.add(pedido)
+    puntos = 0
+    for producto, cantidad in lines:
+        take_stock(tienda_id, producto.producto_id, cantidad)
+        pedido.detalles.append(DetallePedido(producto_id=producto.producto_id, cantidad=cantidad,
+                                             precio_unitario=producto.precio_unitario))
+        puntos += points_for(cantidad)
+    change_points(cliente, puntos)
+    db.session.commit()
+except Exception:
+    db.session.rollback()
+    raise
+\end{lstlisting}
+\end{minipage}
+
+The same pattern is used to cancel an order (give back the stock of every line, remove the points,
+delete the header so the lines cascade) and for the CRUD of the lines. Changing the quantity of a
+line only moves the difference: a bigger quantity takes \texttt{new - old} from the stock, a smaller
+one gives \texttt{old - new} back, and the points change by the same difference.
+
+\subsection{Atomic stock update}
+
+The stock is subtracted with an SQL expression, \texttt{cantidad\_stock = cantidad\_stock - x},
+instead of reading the value, subtracting in Python and writing the result. With the second way two
+orders at the same moment could both read 10, both write 8, and one sale would be lost. The row is
+also read with \texttt{SELECT ... FOR UPDATE} (\texttt{with\_for\_update()}), which locks it in
+MySQL/InnoDB; SQLite ignores that clause but only allows one writer at a time. Finally, the check
+\texttt{cantidad\_stock >= 0} stops any update that would leave negative stock.
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Python, caption={\texttt{take\_stock()} in \texttt{routes.py}.}]
+def take_stock(tienda_id, producto_id, cantidad):
+    row = find_inventory(tienda_id, producto_id, lock=True)    # SELECT ... FOR UPDATE
+    if row is None:
+        db.session.rollback()
+        abort(409, f'Store {tienda_id} does not sell product {producto_id}')
+    if row.cantidad_stock < cantidad:
+        message = (f'Not enough stock of {row.producto.nombre}: '
+                   f'available {row.cantidad_stock}, requested {cantidad}')
+        db.session.rollback()
+        abort(409, message)
+    row.cantidad_stock = Inventario.cantidad_stock - cantidad   # UPDATE ... SET x = x - ?
+\end{lstlisting}
+\end{minipage}
+
+\subsection{Error handling}
+
+\texttt{app.py} registers two error handlers. Any \texttt{HTTPException} (our \texttt{abort(400, ...)},
+a 404 from \texttt{get\_or\_404}, or an unknown route) becomes \texttt{\{"error": ...\}} with its code.
+An \texttt{IntegrityError} from the database is rolled back and turned into a 409 with a readable
+message (for example ``A customer with that email already exists'') instead of a 500 error. The
+deletes with dependencies are also checked in the API before deleting, so the message can say why
+(``Customer 3 has orders and cannot be deleted'').
+
+\subsection{One rounding rule for totals and reports}
+\label{sec:rounding}
+
+Each line has a subtotal \texttt{cantidad} $\times$ \texttt{precio\_unitario}. Quantities with two
+decimals can give three or four decimals here (0.75 kg $\times$ \$7.40 = \$5.55, but 0.01 $\times$
+\$1.50 = \$0.015), so we need a rounding rule. Our rule is: \textbf{each line is rounded to cents,
+half up, and the order total is the sum of the rounded lines}. In Python this is
+\texttt{Decimal.quantize(Decimal('0.01'), ROUND\_HALF\_UP)}.
+
+The reports add many lines in SQL, so the SQL must use exactly the same rule. In SQLite this was
+tricky: \texttt{ROUND(0.015, 2)} returns 0.01, because 0.015 is stored as the float
+0.01499999\ldots. We add a very small amount before rounding:
+
+\begin{lstlisting}[language=Python]
+# routes.py: the subtotal of one line in SQL, used by every report
+SUBTOTAL = db.func.round(DetallePedido.cantidad * DetallePedido.precio_unitario + 0.000001, 2)
+\end{lstlisting}
+
+The amount (0.000001) is much smaller than a cent, so it never changes a value that was already
+correct, but it pushes 0.01499999\ldots{} back to 0.015 so it rounds up like Python and MySQL do. The
+test \texttt{test\_order\_total\_and\_reports\_round\_the\_same\_way} uses two lines of \$0.015: the
+order total, the dashboard revenue and the sales report all return \$0.04.
+
+% ============================================================
+\section{Testing}
+\label{sec:testing}
+
+There are two groups of automated tests, both run with \texttt{pytest}:
+
+\begin{itemize}[itemsep=0.1em]
+  \item \texttt{tests/test\_database.py}: the test cases TC-01 to TC-17. Each test creates a new empty
+  database from \texttt{schema\_sqlite.sql} and runs the steps with plain SQL through Python's
+  \texttt{sqlite3} module, so they test the schema itself, not the API.
+  \item \texttt{tests/test\_api.py}: tests of every endpoint with the Flask test client, each on a new
+  temporary database with 2 customers, 2 stores, 2 products and 3 inventory rows.
+\end{itemize}
+
+\subsection{Database test cases}
+
+TC-01 to TC-13 are the cases of the design document, updated to the new schema (an order is now a
+header plus a line). TC-14 to TC-17 are new and test the order lines.
+
+\begin{center}
+\small
+\begin{longtable}{p{1.2cm} p{1.4cm} >{\raggedright}p{9.6cm} p{1.4cm}}
+\toprule
+\textbf{Test} & \textbf{Req.} & \textbf{What is checked} & \textbf{Status} \\
+\midrule
+\endhead
+TC-01 & FR-01 & New customer gets an automatic id and 0 eco-points. & Passed \\
+TC-02 & FR-02 & Inventory row (1,1) with 100.00 is saved and returned once. & Passed \\
+TC-03 & NFR-01 & 50 concurrent transactions subtract 1.00 each; final stock is 50.00 and it takes less than 2 s. & Passed \\
+TC-04 & FR-02 & A second row (1,1) in \texttt{inventario} is rejected by \texttt{pk\_inventario}. & Passed \\
+TC-05 & FR-03 & A valid order is saved: header (date, customer, store) and its line (product, 2.50, price 2.80). & Passed \\
+TC-06 & FR-03 & An order with \texttt{cliente\_id}=9999 is rejected by the foreign key. & Passed \\
+TC-07 & FR-03 & Quantities 0 and $-1.00$ are rejected by \texttt{ck\_detalle\_pedido\_cantidad\_positiva}; no header or line is left. & Passed \\
+TC-08 & FR-04 & History of customer 1 returns exactly their 3 orders, newest first, with product and store names. & Passed \\
+TC-09 & FR-05 & Order of 2.50 and stock update in one transaction; stock is 97.50. & Passed \\
+TC-10 & FR-05 & Order of 500.00 is rolled back by the check on stock; no header, no line, stock stays 97.50. & Passed \\
+TC-11 & FR-06 & Low stock query returns only the row with 5.00. & Passed \\
+TC-12 & NFR-02 & Duplicate email is rejected by \texttt{uq\_cliente\_correo\_electronico}. & Passed \\
+TC-13 & NFR-03 & The script creates the 6 tables with their keys, foreign keys (with CASCADE/RESTRICT), checks and indexes. & Passed \\
+TC-14 & FR-03 & One order holds two products and its total is 7.00 + 4.00 = 11.00. & Passed \\
+TC-15 & NFR-02 & The same product twice in one order is rejected by \texttt{pk\_detalle\_pedido}. & Passed \\
+TC-16 & NFR-02 & Deleting an order deletes its lines (\texttt{ON DELETE CASCADE}). & Passed \\
+TC-17 & NFR-02 & A product that appears in an order line cannot be deleted (\texttt{ON DELETE RESTRICT}). & Passed \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\subsection{API tests}
+
+\begin{center}
+\small
+\begin{longtable}{>{\raggedright}p{2.6cm} >{\raggedright}p{10.6cm} p{1.3cm}}
+\toprule
+\textbf{Resource} & \textbf{Tests} & \textbf{Status} \\
+\midrule
+\endhead
+Customers (13) & list, search, create with 0 points, missing field, body without JSON, duplicate email (409), update, invalid values, update to a duplicate email, not found (404), delete, delete with orders blocked (409), history newest first & Passed \\
+Stores (3) & full CRUD, missing field (400), delete with inventory blocked (409) & Passed \\
+Products (4) & full CRUD, price is required, delete with inventory blocked, delete with order lines blocked (409) & Passed \\
+Inventory (6) & list and filter by store, create, duplicate (409), wrong store or product (404), update and delete, low stock report & Passed \\
+Orders (15) & create updates stock and points, several lines, one bad line rolls back everything, same product twice (400), create with a date, not enough stock (409, stock unchanged), invalid quantity, missing references (404), cancel restores stock and points (one and several lines), points never negative, list newest first, filters, change the date, quantity and eco-points limits & Passed \\
+Order lines (3) & price is copied into the line, full CRUD of lines with stock and points adjusted, not found cases & Passed \\
+Reports (5) & sales by store with date range, best products and top customers, daily sales (days without sales are 0), daily sales by range, same rounding in totals and reports & Passed \\
+Other (4) & \texttt{/} serves the GUI, unknown route returns JSON, \texttt{/api/resumen}, Swagger and OpenAPI spec & Passed \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+Result of running all the tests:
+
+\begin{lstlisting}
+> python -m pytest
+collected 71 items
+
+tests\test_api.py .....................................................  [ 74%]
+tests\test_database.py ..................                                [100%]
+
+============================= 71 passed in 5.24s ==============================
+\end{lstlisting}
+
+The 71 tests are 53 API tests and 18 database tests (TC-07 runs twice, with 0 and with $-1.00$).
+Besides the automated tests, we checked the GUI by hand in the browser, at desktop size and at
+phone size: creating, editing and deleting in every page, orders with several lines, the error
+messages, and the reports with different date ranges. The screenshots in this report were taken
+from the application running with the sample data of \texttt{seed.py}.
+
+% ============================================================
+\section{GUI Design and User Experience}
+
+The GUI is a single web page made with HTML, CSS and plain JavaScript (no framework and no chart
+library). Flask serves it at \texttt{/}, and every number on the screen comes from the API through
+\texttt{fetch}. The JavaScript is split by page: \texttt{api.js} (calls to the API),
+\texttt{util.js} (formatting, dialogs, messages, CSV), \texttt{charts.js} (SVG charts),
+\texttt{dashboard.js}, \texttt{orders.js}, \texttt{catalog.js} (customers, stores, products and
+inventory), \texttt{reports.js} and \texttt{app.js} (navigation).
+
+\subsection{Design decisions}
+
+\begin{itemize}[itemsep=0.2em]
+  \item \textbf{Built around the main task.} The most common job in a refill station is to register
+  a sale, so the menu starts with Dashboard, Orders and Reports, and the catalog pages
+  (Customers, Stores, Products, Inventory) come after a separator.
+  \item \textbf{Calm colors.} A dark green menu, one green for main buttons, amber for eco-points
+  and red only for low stock, errors and delete buttons. Numbers are aligned to the right in tables.
+  \item \textbf{Feedback for every action.} A short message (toast) appears after each operation:
+  green when it worked, red with the message of the API when it failed. Deleting or cancelling
+  always asks for confirmation in a dialog that says what will happen (for example, ``The stock
+  goes back to Sucursal Centro and 40 eco-points are removed from Andrés Moncayo'').
+  \item \textbf{The cart shows the result before saving.} While the order is built, the GUI shows
+  the price, the stock available, the subtotal and the points of each line, and the total. These
+  are only a preview: the real values are calculated by the API when the order is placed.
+  \item \textbf{Responsive.} Below 900 px the side menu becomes a button at the top. On a phone the
+  dashboard figures use two columns, the order lines (cart and order detail) turn into cards, and
+  the other wide tables scroll inside their own box, so the page itself never scrolls sideways.
+  \item \textbf{Accessibility.} Labels on every field, text for screen readers on icon buttons,
+  keyboard focus moves to the page title when the page changes, messages are announced with
+  \texttt{aria-live}, and the page respects the system dark mode and ``reduce motion'' settings.
+\end{itemize}
+
+\subsection{Pages}
+
+\begin{center}
+\small
+\begin{tabular}{p{2.2cm} >{\raggedright}p{9.4cm} >{\raggedright\arraybackslash}p{2.8cm}}
+\toprule
+\textbf{Page} & \textbf{What the user can do} & \textbf{Requirement} \\
+\midrule
+Dashboard & See revenue, orders, customers, stores, products, eco-points and low stock; revenue per day (30 days), low stock list, revenue by store, top products, recent orders & FR-06 \\
+Orders & Build an order with several lines (cart), place it, list and filter orders, open an order to change its date, change, add or remove lines, or cancel it & FR-03, FR-05 \\
+Reports & Choose a date range, see four reports with charts and tables, export CSV, print & Reports \\
+Customers & List, search, add, edit, delete, see the order history & FR-01, FR-04 \\
+Stores & List, add, edit, delete & -- \\
+Products & List, add, edit (including the price), delete & -- \\
+Inventory & See stock by store, add a product to a store, edit the stock, remove, show only low stock & FR-02, FR-06 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\linewidth]{img/gui_final_dashboard.png}
+  \caption{Dashboard with the totals of the sample data, revenue per day and the low stock alert (FR-06).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\linewidth]{img/gui_final_orders_cart.png}
+  \caption{Orders page: a new order for Ana Pérez with three lines. The summary shows the total
+  (\$7.00 + \$4.00 + \$5.55 = \$16.55) and the 44 eco-points she will earn.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\linewidth]{img/gui_final_order_drawer.png}
+  \caption{Order detail drawer: the date, the lines with their saved price (quantities can be
+  changed or removed), a form to add a product, and the cancel button.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{0.49\linewidth}\vspace{0pt}
+    \centering
+    \includegraphics[width=\linewidth]{img/gui_final_inventory.png}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\linewidth}\vspace{0pt}
+    \centering
+    \includegraphics[width=\linewidth]{img/gui_final_error.png}
+  \end{minipage}
+  \caption{Left: inventory of Sucursal Norte; rows under 10 units are marked ``Low'' (FR-02,
+  FR-06). Right: adding a customer with an email that already exists; the API answers 409 and the
+  GUI shows its message (NFR-02).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.72\linewidth]{img/gui_final_mobile.png}
+  \caption{The same GUI on a 400 px wide phone screen: dashboard, open menu, and the cart where each
+  line becomes a card.}
+\end{figure}
+
+% ============================================================
+\section{Reports}
+
+The reports answer the questions a store manager asks: which store sells more, which products sell
+more, who are the best customers and how sales change from day to day. They are calculated in SQL
+with \texttt{GROUP BY}, so the database does the work and only the result travels to the browser.
+All of them accept an optional date range \texttt{?desde=YYYY-MM-DD\&hasta=YYYY-MM-DD} (both days
+included).
+
+\begin{center}
+\small
+\begin{longtable}{>{\raggedright}p{3.3cm} >{\raggedright}p{6.2cm} >{\raggedright\arraybackslash}p{5.2cm}}
+\toprule
+\textbf{Report} & \textbf{How it is calculated} & \textbf{Shown in the GUI} \\
+\midrule
+\endhead
+Sales by store & \texttt{tienda} LEFT JOIN \texttt{pedido} LEFT JOIN \texttt{detalle\_pedido}, grouped by store: number of orders, revenue, average ticket. The left joins keep stores with no sales (with 0). & Bars and table with a total row \\
+Best-selling products & \texttt{detalle\_pedido} JOIN \texttt{producto}, grouped by product: quantity sold, revenue, orders; ordered by revenue; \texttt{?limite=} (1--100) & Bars and table, top 5/10/20 \\
+Top customers & \texttt{cliente} JOIN \texttt{pedido} JOIN \texttt{detalle\_pedido}, grouped by customer: orders, total spent, current points & Bars and table, top 5/10/20 \\
+Sales per day & Grouped by \texttt{DATE(fecha\_exacta)}; the API fills the days without sales with 0, up to 366 days & Line chart, key figures (best day, days with sales), table \\
+Low stock (FR-06) & \texttt{inventario} where \texttt{cantidad\_stock < limite} (10 by default) & Dashboard list and inventory filter \\
+Summary & Counts of every table, total revenue, total eco-points & Dashboard figures \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+All the money in the reports uses the \texttt{SUBTOTAL} expression of Section~\ref{sec:rounding}, so
+a report and the orders it adds always give the same total. The page has quick ranges (7, 30, 90
+days, all time); each report can be exported to CSV (made in the browser from the data the API
+returned) or printed alone, and ``Print all'' uses a print stylesheet that hides the menu and the
+buttons.
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{0.505\linewidth}\vspace{0pt}
+    \centering
+    \includegraphics[width=\linewidth]{img/gui_final_reports.png}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.475\linewidth}\vspace{0pt}
+    \centering
+    \includegraphics[width=\linewidth]{img/gui_final_reports_rankings.png}
+  \end{minipage}
+  \caption{Reports page for the last 30 days. Left: revenue per day and sales by store. Right:
+  best-selling products and top customers. Each report has its own CSV export and print button.}
+\end{figure}
+
+% ============================================================
+\section{Deployment and Repository}
+
+\subsection{Repository structure}
+
+Repository: \url{\repourl}
+
+\begin{lstlisting}
+database/             SQL scripts (SQLite and MySQL)
+models.py             the 6 tables as SQLAlchemy models
+routes.py             API endpoints and reports
+openapi.py            OpenAPI 3 specification (Swagger UI at /api/docs)
+app.py                Flask application; serves the GUI, Swagger and the presentation
+seed.py               creates the tables and loads sample data
+static/               GUI (index.html, css/, js/)
+static/presentation/  web presentation of the project (/presentation)
+tests/                database test cases (TC-01..TC-17) and API tests
+docs/API.md           text documentation of the endpoints
+docs/report/          LaTeX source of the advance and of this report
+index.py, vercel.json entry point and configuration for Vercel
+\end{lstlisting}
+
+\subsection{How to run}
+
+\begin{lstlisting}
+pip install -r requirements.txt
+python seed.py          # creates the tables and loads the sample data
+python app.py           # GUI: http://127.0.0.1:5000   Swagger: /api/docs
+python -m pytest -v     # runs the 71 tests
+\end{lstlisting}
+
+To use MySQL (for example the Docker container of the labs), the script is run first and
+\texttt{DATABASE\_URL} is set before \texttt{seed.py} and \texttt{app.py}:
+
+\begin{lstlisting}
+docker exec -i mysqlcontainer mysql -uroot -p123456 < database/schema_mysql.sql
+set DATABASE_URL=mysql+pymysql://root:123456@127.0.0.1:3306/eco_marketplace
+\end{lstlisting}
+
+\subsection{Online version}
+
+The project is deployed on \textbf{Vercel} at \url{\demourl}. Vercel runs \texttt{index.py} as a
+Python serverless function. Its file system is read-only except for \texttt{/tmp}, so the online
+version uses an SQLite file in \texttt{/tmp} and loads the sample data when a new instance starts.
+This is enough for a demonstration, but the data is not permanent: it resets when Vercel starts a
+new instance. A real deployment would use a managed MySQL or PostgreSQL database, and only
+\texttt{DATABASE\_URL} would change.
+
+The presentation for the demonstration is a web page of the same project, at
+\url{\demourl/presentation}.
+
+% ============================================================
+\section{Challenges Faced}
+
+\begin{itemize}[itemsep=0.3em]
+  \item \textbf{Changing the order model late.} Adding \texttt{detalle\_pedido} after the advance
+  touched every layer: the schema, the models, the order endpoints, the seed data, the tests and
+  the GUI. The test cases helped a lot here: we updated TC-05 to TC-10 to the new structure first,
+  and then changed the code until they passed again. Old databases from the advance must be
+  recreated with \texttt{python seed.py}, because we did not use a migration tool.
+  \item \textbf{Keeping stock and points correct when lines change.} With several lines per order,
+  there are more ways to change an order: add a line, change a quantity, remove a line, cancel the
+  order. Each one must move the stock and the points by the right amount, inside one transaction.
+  We decided that only the difference moves, that the last line cannot be deleted, and that the
+  customer and store of an order cannot change (the stock was already taken from that store).
+  \item \textbf{Rounding.} An external code review (with OpenAI Codex) found that an order total
+  and the reports could differ by one cent: the order rounded each line, but the report added the
+  lines in SQL and rounded at the end. For two lines of \$0.015 that is \$0.04 against \$0.03. On top
+  of that, SQLite stores decimals as floats, so even \texttt{ROUND(0.015, 2)} gave 0.01. We defined
+  one rule for everything (round each line half up) and added the small amount described in
+  Section~\ref{sec:rounding}, with a test that checks the three places agree.
+  \item \textbf{Eco-points overflow.} The same review noticed that a huge quantity could give more
+  eco-points than an \texttt{INT} can hold. Now one line can have at most 10000 units, and the API
+  answers 409 if the new balance of a customer would go over 2,147,483,647, before saving anything.
+  \item \textbf{SQLite specifics.} Foreign keys are off by default (fixed with the \texttt{PRAGMA}
+  on every connection), and with 50 threads the default lock waiting of SQLite made TC-03 slower
+  than 2 seconds; WAL mode and a short retry fixed it (already explained in the advance).
+  \item \textbf{Deploying with SQLite.} Vercel does not keep files between instances, so we could
+  not deploy the database file. We used \texttt{/tmp} with the sample data loaded on start, and we
+  say clearly in the README that the online data is not permanent.
+\end{itemize}
+
+% ============================================================
+\section{Future Enhancements}
+
+\begin{itemize}[itemsep=0.2em]
+  \item \textbf{Login and roles}, so only the staff can use the GUI, and a cashier cannot delete
+  stores or change prices.
+  \item \textbf{Permanent online database}: a managed MySQL or PostgreSQL instead of SQLite in
+  \texttt{/tmp}.
+  \item \textbf{Migrations} with Alembic, so a schema change does not need to recreate the database.
+  \item \textbf{Using eco-points}: a table of rewards and a record of when points are spent, instead
+  of changing the balance by hand.
+  \item \textbf{Minimum stock per product and store}, instead of one limit of 10 units for everything,
+  and alerts when a product goes under its limit.
+  \item \textbf{Price history} table, to see how the price of each product changed over time.
+  \item \textbf{Pagination} in the API and the GUI tables when there are many customers or orders.
+  \item \textbf{Product categories} and reports by category.
+\end{itemize}
+
+% ============================================================
+\section{Use of Generative AI}
+
+As in the previous deliveries, generative AI was used as a support tool. The requirements, the
+database design, the test cases and the decisions in this report come from the team. In this last
+stage we used two tools:
+
+\begin{itemize}[itemsep=0.1em]
+  \item \textbf{Claude Code} (Anthropic) to help write and change code (the new table, the order
+  line endpoints, the reports, Swagger, the GUI redesign and the tests), to make the diagrams and
+  screenshots, and to give format to this report.
+  \item \textbf{OpenAI Codex} to review the code. It found the rounding difference and the possible
+  eco-points overflow described in Section 11; we fixed both and added tests for them.
+\end{itemize}
+
+The team reviewed the code that was generated, ran the application and the tests, and checked the
+results shown in this document. The prompts below are short summaries, translated from Spanish.
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedright}p{2.8cm} >{\raggedright}p{6.2cm} >{\raggedright}p{1.9cm} >{\raggedright}p{1.6cm} >{\raggedright\arraybackslash}p{1.8cm}}
+\toprule
+\textbf{Section / Task} & \textbf{Prompt used (summary)} & \textbf{Tool} & \textbf{Version} & \textbf{Date} \\
+\midrule
+Order lines (Sections 2--7) & ``The professor said the database design is missing Detalle de Pedido (an order can only have one product). Add it to the schema, the API, the tests and the GUI.'' & Claude Code (Anthropic) & Claude Opus 5.5 & Nov 2026 \\
+Reports, Swagger, GUI (Sections 5, 8, 9) & ``Complete the API documentation with Swagger, add sales reports and finish the GUI with the reports, responsive design and CRUD for all tables.'' & Claude Code (Anthropic) & Claude Opus 5.5 & Nov 2026 \\
+Code review (Section 11) & ``Review the code of the project and find bugs.'' & OpenAI Codex & Codex CLI 0.157.1 & Nov 23, 2026 \\
+This report & ``Write the final report with the same format as the project advance, with diagrams and screenshots.'' & Claude Code (Anthropic) & Claude Opus 5.5 & Nov 23, 2026 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section*{References}
+\addcontentsline{toc}{section}{References}
+
+\begin{enumerate}[itemsep=0.2em]
+  \item Codd, E. F. (1970). A relational model of data for large shared data banks. \textit{Communications of the ACM, 13}(6), 377--387.
+  \item Elmasri, R., \& Navathe, S. B. (2016). \textit{Fundamentals of database systems} (7th ed.). Pearson.
+  \item Silberschatz, A., Korth, H. F., \& Sudarshan, S. (2020). \textit{Database system concepts} (7th ed.). McGraw-Hill Education.
+  \item Fielding, R. T. (2000). \textit{Architectural styles and the design of network-based software architectures} (Doctoral dissertation). University of California, Irvine.
+  \item Pallets Projects. (n.d.). \textit{Flask documentation}. \url{https://flask.palletsprojects.com}
+  \item SQLAlchemy. (n.d.). \textit{SQLAlchemy 2.0 documentation}. \url{https://docs.sqlalchemy.org}
+  \item SQLite. (n.d.). \textit{SQLite foreign key support}. \url{https://www.sqlite.org/foreignkeys.html}
+  \item Oracle. (n.d.). \textit{MySQL 8.0 reference manual: CHECK constraints}. \url{https://dev.mysql.com/doc/refman/8.0/en/create-table-check-constraints.html}
+  \item OpenAPI Initiative. (2021). \textit{OpenAPI specification 3.0}. \url{https://spec.openapis.org/oas/v3.0.3}
+  \item SmartBear. (n.d.). \textit{Swagger UI}. \url{https://swagger.io/tools/swagger-ui/}
+\end{enumerate}
+
+\end{document}
