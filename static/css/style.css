@@ -1486,7 +1486,7 @@ fieldset {
 
 .stock-edit .unit {
   color: var(--muted);
-  min-width: 46px;
+  min-width: 4.6em; /* fits "unidades" so the inputs line up */
   text-align: left;
 }
 
@@ -2173,6 +2173,21 @@ dialog::backdrop {
 
   .field-inline select {
     max-width: 160px;
+  }
+
+  /* filters get a full row each, so longer Spanish options ("Todos los clientes") aren't clipped */
+  .filters {
+    width: 100%;
+  }
+
+  .filters .field-inline {
+    flex: 1 1 100%;
+  }
+
+  .filters .field-inline select {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
   }
 
   .report-stats {

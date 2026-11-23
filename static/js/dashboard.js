@@ -17,7 +17,7 @@ async function loadDashboard() {
     data = { summary, daily, stores, top, low, orders };
   } catch (err) {
     showError(err);
-    setRows($("#dash-recent"), emptyRow(7, "Could not load the dashboard", esc(err.message)));
+    setRows($("#dash-recent"), emptyRow(7, "No se pudo cargar el panel", esc(err.message)));
     return;
   }
 
@@ -32,27 +32,27 @@ async function loadDashboard() {
   // revenue per day (last 30 days)
   const total = data.daily.reduce((sum, d) => sum + d.ingresos, 0);
   const orderCount = data.daily.reduce((sum, d) => sum + d.pedidos, 0);
-  $("#daily-total").innerHTML = `${esc(money(total))}<span>${esc(plural(orderCount, "order"))}</span>`;
+  $("#daily-total").innerHTML = `${esc(money(total))}<span>${esc(plural(orderCount, "pedido"))}</span>`;
   lineChart(
     $("#dash-daily-chart"),
     data.daily.map((d) => ({
       label: dayLabel(d.fecha),
       tooltip: dayLabel(d.fecha, true),
       value: d.ingresos,
-      detail: plural(d.pedidos, "order"),
+      detail: plural(d.pedidos, "pedido"),
     }))
   );
 
   barList(
     $("#dash-stores"),
-    data.stores.map((r) => ({ label: r.nombre_sucursal, value: r.ingresos, note: `${plural(r.pedidos, "order")}, avg. ticket ${money(r.ticket_promedio)}` })),
-    { emptyTitle: "No stores yet", emptyHint: '<a href="#stores">Add a store</a> to start selling.' }
+    data.stores.map((r) => ({ label: r.nombre_sucursal, value: r.ingresos, note: `${plural(r.pedidos, "pedido")}, ticket promedio ${money(r.ticket_promedio)}` })),
+    { emptyTitle: "Aún no hay tiendas", emptyHint: '<a href="#stores">Agregue una tienda</a> para empezar a vender.' }
   );
 
   barList(
     $("#dash-top"),
-    data.top.map((r) => ({ label: r.nombre, value: r.ingresos, note: `${qty(r.cantidad_vendida)} ${r.unidad_medida} sold in ${plural(r.pedidos, "order")}` })),
-    { emptyTitle: "No sales yet", emptyHint: "Best sellers show up after the first order." }
+    data.top.map((r) => ({ label: r.nombre, value: r.ingresos, note: `${qty(r.cantidad_vendida)} ${unitFor(r.cantidad_vendida, r.unidad_medida)} en ${plural(r.pedidos, "pedido")}` })),
+    { emptyTitle: "Aún no hay ventas", emptyHint: "Los más vendidos aparecerán después del primer pedido." }
   );
 
   // low stock: a jar per row, filled relative to the 10 unit threshold
@@ -63,19 +63,19 @@ async function loadDashboard() {
           (r) => `<li>
             ${jar(r.cantidad_stock / LOW_STOCK, true)}
             <span class="stock-name"><strong>${esc(r.nombre_producto)}</strong><span>${esc(r.nombre_sucursal)}</span></span>
-            <span class="stock-qty">${esc(qty(r.cantidad_stock))} <small>${esc(r.unidad_medida)}</small></span>
+            <span class="stock-qty">${esc(qty(r.cantidad_stock))} <small>${esc(unitFor(r.cantidad_stock, r.unidad_medida))}</small></span>
           </li>`
         )
         .join("") +
-      (data.low.length > 6 ? `<li class="stock-more"><a href="#inventory">${esc(plural(data.low.length - 6, "more row"))} in inventory</a></li>` : "")
-    : `<li class="stock-ok">${emptyBlock("Every store is well stocked", "Nothing is under 10 units.")}</li>`;
+      (data.low.length > 6 ? `<li class="stock-more"><a href="#inventory">${esc(plural(data.low.length - 6, "registro más", "registros más"))} en el inventario</a></li>` : "")
+    : `<li class="stock-ok">${emptyBlock("Todas las tiendas tienen buen stock", "Nada está por debajo de 10 unidades.")}</li>`;
 
   // recent orders
   setRows(
     $("#dash-recent"),
     data.orders.length
       ? data.orders.slice(0, 6).map((o) => orderRow(o)).join("")
-      : emptyRow(7, "No orders yet", '<a href="#orders">Place the first order</a>.')
+      : emptyRow(7, "Aún no hay pedidos", '<a href="#orders">Registre el primer pedido</a>.')
   );
 }
 
@@ -89,6 +89,6 @@ function orderRow(o, withProducts = false) {
     ${withProducts ? `<td class="num">${o.num_productos}</td>` : ""}
     <td class="num strong">${esc(money(o.total))}</td>
     <td class="num"><span class="points">${int(o.puntos_ganados)}</span></td>
-    <td class="actions"><button type="button" class="btn btn-sm" data-view-order="${o.pedido_id}">View<span class="sr-only"> order ${o.pedido_id}</span></button></td>
+    <td class="actions"><button type="button" class="btn btn-sm" data-view-order="${o.pedido_id}">Ver<span class="sr-only"> pedido ${o.pedido_id}</span></button></td>
   </tr>`;
 }

@@ -28,7 +28,7 @@ function showPage(moveFocus) {
     if (link.dataset.page === name) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
-  document.title = `${title} | Eco-Marketplace Admin`;
+  document.title = `${title} | Administración Eco-Marketplace`;
   closeNav();
   window.scrollTo(0, 0);
   // after clicking a link, move keyboard focus to the new page heading
@@ -44,7 +44,7 @@ function openNav() {
   document.body.classList.add("nav-open");
   $("#scrim").hidden = false;
   $("#nav-toggle").setAttribute("aria-expanded", "true");
-  $("#nav-toggle").setAttribute("aria-label", "Close navigation");
+  $("#nav-toggle").setAttribute("aria-label", "Cerrar navegación");
   $(".nav a").focus();
 }
 
@@ -53,7 +53,7 @@ function closeNav() {
   document.body.classList.remove("nav-open");
   $("#scrim").hidden = true;
   $("#nav-toggle").setAttribute("aria-expanded", "false");
-  $("#nav-toggle").setAttribute("aria-label", "Open navigation");
+  $("#nav-toggle").setAttribute("aria-label", "Abrir navegación");
 }
 
 $("#nav-toggle").addEventListener("click", () => {

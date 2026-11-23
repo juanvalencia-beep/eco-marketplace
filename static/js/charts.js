@@ -18,7 +18,7 @@ function lineChart(container, points, { format = money, axisFormat = moneyShort,
   watchResize(container);
 
   if (!points.length || points.every((p) => !p.value)) {
-    container.innerHTML = emptyBlock("No sales in this period", "Revenue will appear here once orders are placed.");
+    container.innerHTML = emptyBlock("Sin ventas en este periodo", "Los ingresos aparecerán aquí cuando se registren pedidos.");
     return;
   }
 
@@ -97,7 +97,7 @@ function lineChart(container, points, { format = money, axisFormat = moneyShort,
 }
 
 // rows: [{ label, value, note }]. Bars are as long as value / largest value.
-function barList(container, rows, { format = money, emptyTitle = "Nothing to show", emptyHint = "" } = {}) {
+function barList(container, rows, { format = money, emptyTitle = "Nada que mostrar", emptyHint = "" } = {}) {
   if (!rows.length || rows.every((r) => !r.value)) {
     container.innerHTML = emptyBlock(emptyTitle, emptyHint);
     return;

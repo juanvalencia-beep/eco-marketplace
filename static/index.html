@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Eco-Marketplace Admin</title>
+  <title>Administración Eco-Marketplace</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='10' y='2' width='12' height='5' rx='1.5' fill='%23133A31'/%3E%3Crect x='6' y='7' width='20' height='23' rx='5' fill='%23133A31'/%3E%3Crect x='9' y='15' width='14' height='12' rx='3' fill='%23E0A447'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,12 +37,12 @@
   </defs>
 </svg>
 
-<a class="skip-link" href="#main">Skip to content</a>
+<a class="skip-link" href="#main">Saltar al contenido</a>
 
 <div class="app">
   <!-- Top bar: only visible on narrow screens, where the sidebar becomes a drawer -->
   <header class="topbar">
-    <button type="button" class="icon-btn topbar-menu" id="nav-toggle" aria-controls="sidebar" aria-expanded="false" aria-label="Open navigation">
+    <button type="button" class="icon-btn topbar-menu" id="nav-toggle" aria-controls="sidebar" aria-expanded="false" aria-label="Abrir navegación">
       <svg class="icon"><use href="#i-menu"/></svg>
     </button>
     <a href="#dashboard" class="topbar-brand">
@@ -51,38 +51,38 @@
     </a>
   </header>
 
-  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+  <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
     <a href="#dashboard" class="brand">
       <span class="brand-mark" aria-hidden="true"><span></span></span>
       <span class="brand-text">
         <strong>Eco-Marketplace</strong>
-        <span>Refill stations admin</span>
+        <span>Administración de estaciones de recarga</span>
       </span>
     </a>
 
     <nav class="nav">
-      <a href="#dashboard" data-page="dashboard"><svg class="icon"><use href="#i-dashboard"/></svg>Dashboard</a>
-      <a href="#orders" data-page="orders"><svg class="icon"><use href="#i-orders"/></svg>Orders</a>
-      <a href="#reports" data-page="reports"><svg class="icon"><use href="#i-reports"/></svg>Reports</a>
+      <a href="#dashboard" data-page="dashboard"><svg class="icon"><use href="#i-dashboard"/></svg>Panel</a>
+      <a href="#orders" data-page="orders"><svg class="icon"><use href="#i-orders"/></svg>Pedidos</a>
+      <a href="#reports" data-page="reports"><svg class="icon"><use href="#i-reports"/></svg>Reportes</a>
       <hr>
-      <a href="#customers" data-page="customers"><svg class="icon"><use href="#i-customers"/></svg>Customers</a>
-      <a href="#stores" data-page="stores"><svg class="icon"><use href="#i-stores"/></svg>Stores</a>
-      <a href="#products" data-page="products"><svg class="icon"><use href="#i-products"/></svg>Products</a>
-      <a href="#inventory" data-page="inventory"><svg class="icon"><use href="#i-inventory"/></svg>Inventory</a>
+      <a href="#customers" data-page="customers"><svg class="icon"><use href="#i-customers"/></svg>Clientes</a>
+      <a href="#stores" data-page="stores"><svg class="icon"><use href="#i-stores"/></svg>Tiendas</a>
+      <a href="#products" data-page="products"><svg class="icon"><use href="#i-products"/></svg>Productos</a>
+      <a href="#inventory" data-page="inventory"><svg class="icon"><use href="#i-inventory"/></svg>Inventario</a>
     </nav>
 
     <div class="sidebar-links">
       <a href="/api/docs" target="_blank" rel="noopener">
-        <svg class="icon"><use href="#i-api"/></svg>API docs
+        <svg class="icon"><use href="#i-api"/></svg>Documentación API
         <svg class="icon icon-ext" aria-hidden="true"><use href="#i-external"/></svg>
-        <span class="sr-only">(opens in a new tab)</span>
+        <span class="sr-only">(se abre en una pestaña nueva)</span>
       </a>
       <a href="/presentation" target="_blank" rel="noopener">
-        <svg class="icon"><use href="#i-slides"/></svg>Presentation
+        <svg class="icon"><use href="#i-slides"/></svg>Presentación
         <svg class="icon icon-ext" aria-hidden="true"><use href="#i-external"/></svg>
-        <span class="sr-only">(opens in a new tab)</span>
+        <span class="sr-only">(se abre en una pestaña nueva)</span>
       </a>
-      <p class="sidebar-note">Databases course project</p>
+      <p class="sidebar-note">Proyecto de Bases de Datos</p>
     </div>
   </aside>
   <div class="scrim" id="scrim" hidden></div>
@@ -90,49 +90,49 @@
   <main class="main" id="main" tabindex="-1">
 
     <!-- ============================== Dashboard ============================== -->
-    <section class="page" id="page-dashboard" data-title="Dashboard" hidden>
+    <section class="page" id="page-dashboard" data-title="Panel" hidden>
       <header class="page-head">
         <div>
-          <h1 tabindex="-1">Dashboard</h1>
-          <p class="lede">Sales, stock and eco-points across every refill station.</p>
+          <h1 tabindex="-1">Panel</h1>
+          <p class="lede">Ventas, stock y eco-puntos de todas las estaciones de recarga.</p>
         </div>
         <div class="page-actions">
-          <a href="#reports" class="btn">Open reports</a>
-          <a href="#orders" class="btn btn-primary"><svg class="icon"><use href="#i-plus"/></svg>New order</a>
+          <a href="#reports" class="btn">Ver reportes</a>
+          <a href="#orders" class="btn btn-primary"><svg class="icon"><use href="#i-plus"/></svg>Nuevo pedido</a>
         </div>
       </header>
 
-      <section class="ledger" aria-label="Key figures">
+      <section class="ledger" aria-label="Cifras clave">
         <div class="kpi kpi-lead">
-          <span class="kpi-label">Revenue</span>
+          <span class="kpi-label">Ingresos</span>
           <span class="kpi-value" id="kpi-ingresos">–</span>
-          <span class="kpi-note">All orders, USD</span>
+          <span class="kpi-note">Todos los pedidos, USD</span>
         </div>
         <div class="kpi">
-          <span class="kpi-label">Orders</span>
+          <span class="kpi-label">Pedidos</span>
           <span class="kpi-value" id="kpi-pedidos">–</span>
         </div>
         <div class="kpi">
-          <span class="kpi-label">Customers</span>
+          <span class="kpi-label">Clientes</span>
           <span class="kpi-value" id="kpi-clientes">–</span>
         </div>
         <div class="kpi">
-          <span class="kpi-label">Stores</span>
+          <span class="kpi-label">Tiendas</span>
           <span class="kpi-value" id="kpi-tiendas">–</span>
         </div>
         <div class="kpi">
-          <span class="kpi-label">Products</span>
+          <span class="kpi-label">Productos</span>
           <span class="kpi-value" id="kpi-productos">–</span>
         </div>
         <div class="kpi kpi-points">
-          <span class="kpi-label"><svg class="icon"><use href="#i-leaf"/></svg>Eco-points</span>
+          <span class="kpi-label"><svg class="icon"><use href="#i-leaf"/></svg>Eco-puntos</span>
           <span class="kpi-value" id="kpi-puntos_ecologicos">–</span>
-          <span class="kpi-note">Held by customers</span>
+          <span class="kpi-note">En poder de los clientes</span>
         </div>
         <a class="kpi kpi-alert" href="#inventory">
-          <span class="kpi-label">Low stock</span>
+          <span class="kpi-label">Stock bajo</span>
           <span class="kpi-value" id="kpi-stock_bajo">–</span>
-          <span class="kpi-note">Rows under 10 units</span>
+          <span class="kpi-note">Con menos de 10 unidades</span>
         </a>
       </section>
 
@@ -140,21 +140,21 @@
         <article class="panel dash-daily">
           <header class="panel-head">
             <div>
-              <h2>Revenue per day</h2>
-              <p class="panel-sub">Last 30 days</p>
+              <h2>Ingresos por día</h2>
+              <p class="panel-sub">Últimos 30 días</p>
             </div>
             <p class="panel-figure" id="daily-total">–</p>
           </header>
-          <div class="chart chart-line" id="dash-daily-chart" role="img" aria-label="Revenue per day for the last 30 days"></div>
+          <div class="chart chart-line" id="dash-daily-chart" role="img" aria-label="Ingresos por día de los últimos 30 días"></div>
         </article>
 
         <article class="panel dash-low">
           <header class="panel-head">
             <div>
-              <h2>Low stock</h2>
-              <p class="panel-sub">Fill level against the 10 unit threshold</p>
+              <h2>Stock bajo</h2>
+              <p class="panel-sub">Nivel de llenado frente al umbral de 10 unidades</p>
             </div>
-            <a href="#inventory" class="btn btn-sm btn-ghost">Inventory</a>
+            <a href="#inventory" class="btn btn-sm btn-ghost">Inventario</a>
           </header>
           <ul class="stock-list" id="dash-low"></ul>
         </article>
@@ -162,8 +162,8 @@
         <article class="panel dash-stores">
           <header class="panel-head">
             <div>
-              <h2>Revenue by store</h2>
-              <p class="panel-sub">All time</p>
+              <h2>Ingresos por tienda</h2>
+              <p class="panel-sub">Todo el historial</p>
             </div>
           </header>
           <div id="dash-stores"></div>
@@ -172,8 +172,8 @@
         <article class="panel dash-top">
           <header class="panel-head">
             <div>
-              <h2>Top products</h2>
-              <p class="panel-sub">By revenue, all time</p>
+              <h2>Productos más vendidos</h2>
+              <p class="panel-sub">Por ingresos, todo el historial</p>
             </div>
           </header>
           <div id="dash-top"></div>
@@ -182,15 +182,15 @@
         <article class="panel dash-recent">
           <header class="panel-head">
             <div>
-              <h2>Recent orders</h2>
-              <p class="panel-sub">The six newest orders</p>
+              <h2>Pedidos recientes</h2>
+              <p class="panel-sub">Los seis pedidos más recientes</p>
             </div>
-            <a href="#orders" class="btn btn-sm btn-ghost">All orders</a>
+            <a href="#orders" class="btn btn-sm btn-ghost">Todos los pedidos</a>
           </header>
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>#</th><th>Date</th><th>Customer</th><th>Store</th><th class="num">Total</th><th class="num">Points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+                <tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Tienda</th><th class="num">Total</th><th class="num">Puntos</th><th class="actions"><span class="sr-only">Acciones</span></th></tr>
               </thead>
               <tbody id="dash-recent"></tbody>
             </table>
@@ -200,52 +200,52 @@
     </section>
 
     <!-- ============================== Orders ============================== -->
-    <section class="page" id="page-orders" data-title="Orders" hidden>
+    <section class="page" id="page-orders" data-title="Pedidos" hidden>
       <header class="page-head">
         <div>
-          <h1 tabindex="-1">Orders</h1>
-          <p class="lede">Build a refill order line by line, then review or change past orders.</p>
+          <h1 tabindex="-1">Pedidos</h1>
+          <p class="lede">Arme un pedido de recarga línea por línea y luego revise o modifique los pedidos anteriores.</p>
         </div>
       </header>
 
       <form class="panel cart" id="cart-form" novalidate>
         <div class="cart-main">
-          <h2>New order</h2>
+          <h2>Nuevo pedido</h2>
           <div class="field-row">
-            <label class="field">Customer
+            <label class="field">Cliente
               <select id="cart-customer" required></select>
             </label>
-            <label class="field">Store
+            <label class="field">Tienda
               <select id="cart-store" required></select>
             </label>
           </div>
 
           <fieldset class="cart-add" id="cart-add" disabled>
-            <legend class="sr-only">Add a product line</legend>
-            <label class="field grow">Product
+            <legend class="sr-only">Agregar una línea de producto</legend>
+            <label class="field grow">Producto
               <select id="cart-product"></select>
             </label>
-            <label class="field field-qty">Quantity
+            <label class="field field-qty">Cantidad
               <span class="input-unit">
-                <input id="cart-qty" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+                <input id="cart-qty" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00">
                 <span class="unit" id="cart-unit"></span>
               </span>
             </label>
-            <button type="button" class="btn" id="cart-add-btn"><svg class="icon"><use href="#i-plus"/></svg>Add line</button>
+            <button type="button" class="btn" id="cart-add-btn"><svg class="icon"><use href="#i-plus"/></svg>Agregar línea</button>
           </fieldset>
-          <p class="hint" id="cart-hint" aria-live="polite">Choose a store to see the products it stocks.</p>
+          <p class="hint" id="cart-hint" aria-live="polite">Elija una tienda para ver los productos que tiene en stock.</p>
 
           <div class="table-wrap">
             <table class="cart-table stack-mobile">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th class="num">Unit price</th>
-                  <th class="num">In stock</th>
-                  <th class="num">Quantity</th>
+                  <th>Producto</th>
+                  <th class="num">Precio unitario</th>
+                  <th class="num">En stock</th>
+                  <th class="num">Cantidad</th>
                   <th class="num">Subtotal</th>
-                  <th class="num">Points</th>
-                  <th class="actions"><span class="sr-only">Remove</span></th>
+                  <th class="num">Puntos</th>
+                  <th class="actions"><span class="sr-only">Quitar</span></th>
                 </tr>
               </thead>
               <tbody id="cart-body"></tbody>
@@ -253,34 +253,34 @@
           </div>
         </div>
 
-        <aside class="receipt" aria-label="Order summary">
-          <h3>Summary</h3>
+        <aside class="receipt" aria-label="Resumen del pedido">
+          <h3>Resumen</h3>
           <dl class="receipt-rows">
-            <div><dt>Customer</dt><dd id="sum-customer">Not chosen</dd></div>
-            <div><dt>Store</dt><dd id="sum-store">Not chosen</dd></div>
-            <div><dt>Lines</dt><dd id="sum-lines">0</dd></div>
+            <div><dt>Cliente</dt><dd id="sum-customer">Sin elegir</dd></div>
+            <div><dt>Tienda</dt><dd id="sum-store">Sin elegir</dd></div>
+            <div><dt>Líneas</dt><dd id="sum-lines">0</dd></div>
           </dl>
           <div class="receipt-total">
             <span>Total</span>
-            <strong id="sum-total">$0.00</strong>
+            <strong id="sum-total">$0,00</strong>
           </div>
-          <p class="receipt-points"><svg class="icon"><use href="#i-leaf"/></svg><span id="sum-points">0</span> eco-points to earn</p>
-          <button type="submit" class="btn btn-primary btn-block" id="cart-submit" disabled>Place order</button>
-          <button type="button" class="btn btn-ghost btn-block" id="cart-clear">Clear lines</button>
+          <p class="receipt-points"><svg class="icon"><use href="#i-leaf"/></svg><span id="sum-points">0</span> eco-puntos por ganar</p>
+          <button type="submit" class="btn btn-primary btn-block" id="cart-submit" disabled>Registrar pedido</button>
+          <button type="button" class="btn btn-ghost btn-block" id="cart-clear">Vaciar líneas</button>
         </aside>
       </form>
 
       <article class="panel">
         <header class="panel-head panel-head-wrap">
           <div>
-            <h2>Order history</h2>
-            <p class="panel-sub" id="orders-count">Newest first</p>
+            <h2>Historial de pedidos</h2>
+            <p class="panel-sub" id="orders-count">Más recientes primero</p>
           </div>
           <div class="filters">
-            <label class="field field-inline">Customer
+            <label class="field field-inline">Cliente
               <select id="orders-filter-customer"></select>
             </label>
-            <label class="field field-inline">Store
+            <label class="field field-inline">Tienda
               <select id="orders-filter-store"></select>
             </label>
           </div>
@@ -288,7 +288,7 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>#</th><th>Date</th><th>Customer</th><th>Store</th><th class="num">Products</th><th class="num">Total</th><th class="num">Points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+              <tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Tienda</th><th class="num">Productos</th><th class="num">Total</th><th class="num">Puntos</th><th class="actions"><span class="sr-only">Acciones</span></th></tr>
             </thead>
             <tbody id="orders-body"></tbody>
           </table>
@@ -297,31 +297,31 @@
     </section>
 
     <!-- ============================== Reports ============================== -->
-    <section class="page" id="page-reports" data-title="Reports" hidden>
+    <section class="page" id="page-reports" data-title="Reportes" hidden>
       <header class="page-head">
         <div>
-          <h1 tabindex="-1">Reports</h1>
-          <p class="lede">Sales by store, product, customer and day for the dates you pick.</p>
+          <h1 tabindex="-1">Reportes</h1>
+          <p class="lede">Ventas por tienda, producto, cliente y día para las fechas que elija.</p>
         </div>
         <div class="page-actions">
-          <button type="button" class="btn" id="print-all"><svg class="icon"><use href="#i-print"/></svg>Print all</button>
+          <button type="button" class="btn" id="print-all"><svg class="icon"><use href="#i-print"/></svg>Imprimir todo</button>
         </div>
       </header>
 
       <form class="panel range" id="range-form">
-        <label class="field">From
+        <label class="field">Desde
           <input type="date" id="range-desde">
         </label>
-        <label class="field">To
+        <label class="field">Hasta
           <input type="date" id="range-hasta">
         </label>
-        <div class="presets" role="group" aria-label="Quick ranges">
-          <button type="button" class="chip" data-days="7">7 days</button>
-          <button type="button" class="chip" data-days="30">30 days</button>
-          <button type="button" class="chip" data-days="90">90 days</button>
-          <button type="button" class="chip" data-days="all">All time</button>
+        <div class="presets" role="group" aria-label="Rangos rápidos">
+          <button type="button" class="chip" data-days="7">7 días</button>
+          <button type="button" class="chip" data-days="30">30 días</button>
+          <button type="button" class="chip" data-days="90">90 días</button>
+          <button type="button" class="chip" data-days="all">Todo</button>
         </div>
-        <button type="submit" class="btn btn-primary">Run reports</button>
+        <button type="submit" class="btn btn-primary">Generar reportes</button>
       </form>
       <p class="print-only print-range" id="print-range"></p>
 
@@ -329,21 +329,21 @@
         <article class="panel report" id="report-daily">
           <header class="panel-head panel-head-wrap">
             <div>
-              <h2>Revenue per day</h2>
-              <p class="panel-sub" id="daily-sub">Every day in the range, including days without sales</p>
+              <h2>Ingresos por día</h2>
+              <p class="panel-sub" id="daily-sub">Todos los días del rango, incluso los días sin ventas</p>
             </div>
             <div class="report-actions">
-              <button type="button" class="btn btn-sm" data-csv="daily"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
-              <button type="button" class="btn btn-sm" data-print="report-daily"><svg class="icon"><use href="#i-print"/></svg>Print</button>
+              <button type="button" class="btn btn-sm" data-csv="daily"><svg class="icon"><use href="#i-download"/></svg>Exportar CSV</button>
+              <button type="button" class="btn btn-sm" data-print="report-daily"><svg class="icon"><use href="#i-print"/></svg>Imprimir</button>
             </div>
           </header>
           <div class="report-stats" id="daily-stats"></div>
-          <div class="chart chart-line" id="report-daily-chart" role="img" aria-label="Revenue per day"></div>
+          <div class="chart chart-line" id="report-daily-chart" role="img" aria-label="Ingresos por día"></div>
           <details class="report-table">
-            <summary>Show daily table</summary>
+            <summary>Ver tabla diaria</summary>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Day</th><th class="num">Orders</th><th class="num">Revenue</th></tr></thead>
+                <thead><tr><th>Día</th><th class="num">Pedidos</th><th class="num">Ingresos</th></tr></thead>
                 <tbody id="daily-body"></tbody>
               </table>
             </div>
@@ -353,19 +353,19 @@
         <article class="panel report" id="report-stores">
           <header class="panel-head panel-head-wrap">
             <div>
-              <h2>Sales by store</h2>
-              <p class="panel-sub">Revenue, orders and average ticket per branch</p>
+              <h2>Ventas por tienda</h2>
+              <p class="panel-sub">Ingresos, pedidos y ticket promedio por sucursal</p>
             </div>
             <div class="report-actions">
-              <button type="button" class="btn btn-sm" data-csv="stores"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
-              <button type="button" class="btn btn-sm" data-print="report-stores"><svg class="icon"><use href="#i-print"/></svg>Print</button>
+              <button type="button" class="btn btn-sm" data-csv="stores"><svg class="icon"><use href="#i-download"/></svg>Exportar CSV</button>
+              <button type="button" class="btn btn-sm" data-print="report-stores"><svg class="icon"><use href="#i-print"/></svg>Imprimir</button>
             </div>
           </header>
           <div class="report-split">
           <div id="stores-chart"></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Store</th><th class="num">Orders</th><th class="num">Revenue</th><th class="num">Avg. ticket</th></tr></thead>
+              <thead><tr><th>Tienda</th><th class="num">Pedidos</th><th class="num">Ingresos</th><th class="num">Ticket promedio</th></tr></thead>
               <tbody id="stores-report-body"></tbody>
             </table>
           </div>
@@ -375,26 +375,26 @@
         <article class="panel report" id="report-products">
           <header class="panel-head panel-head-wrap">
             <div>
-              <h2>Best-selling products</h2>
-              <p class="panel-sub">Ranked by revenue</p>
+              <h2>Productos más vendidos</h2>
+              <p class="panel-sub">Ordenados por ingresos</p>
             </div>
             <div class="report-actions">
-              <label class="field field-inline">Show
+              <label class="field field-inline">Mostrar
                 <select id="products-limit">
-                  <option value="5">Top 5</option>
-                  <option value="10" selected>Top 10</option>
-                  <option value="20">Top 20</option>
+                  <option value="5">Primeros 5</option>
+                  <option value="10" selected>Primeros 10</option>
+                  <option value="20">Primeros 20</option>
                 </select>
               </label>
-              <button type="button" class="btn btn-sm" data-csv="products"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
-              <button type="button" class="btn btn-sm" data-print="report-products"><svg class="icon"><use href="#i-print"/></svg>Print</button>
+              <button type="button" class="btn btn-sm" data-csv="products"><svg class="icon"><use href="#i-download"/></svg>Exportar CSV</button>
+              <button type="button" class="btn btn-sm" data-print="report-products"><svg class="icon"><use href="#i-print"/></svg>Imprimir</button>
             </div>
           </header>
           <div class="report-split">
           <div id="products-chart"></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Product</th><th class="num">Quantity sold</th><th class="num">Orders</th><th class="num">Revenue</th></tr></thead>
+              <thead><tr><th>Producto</th><th class="num">Cantidad vendida</th><th class="num">Pedidos</th><th class="num">Ingresos</th></tr></thead>
               <tbody id="products-report-body"></tbody>
             </table>
           </div>
@@ -404,26 +404,26 @@
         <article class="panel report" id="report-customers">
           <header class="panel-head panel-head-wrap">
             <div>
-              <h2>Top customers</h2>
-              <p class="panel-sub">Ranked by amount spent</p>
+              <h2>Mejores clientes</h2>
+              <p class="panel-sub">Ordenados por monto gastado</p>
             </div>
             <div class="report-actions">
-              <label class="field field-inline">Show
+              <label class="field field-inline">Mostrar
                 <select id="customers-limit">
-                  <option value="5">Top 5</option>
-                  <option value="10" selected>Top 10</option>
-                  <option value="20">Top 20</option>
+                  <option value="5">Primeros 5</option>
+                  <option value="10" selected>Primeros 10</option>
+                  <option value="20">Primeros 20</option>
                 </select>
               </label>
-              <button type="button" class="btn btn-sm" data-csv="customers"><svg class="icon"><use href="#i-download"/></svg>Export CSV</button>
-              <button type="button" class="btn btn-sm" data-print="report-customers"><svg class="icon"><use href="#i-print"/></svg>Print</button>
+              <button type="button" class="btn btn-sm" data-csv="customers"><svg class="icon"><use href="#i-download"/></svg>Exportar CSV</button>
+              <button type="button" class="btn btn-sm" data-print="report-customers"><svg class="icon"><use href="#i-print"/></svg>Imprimir</button>
             </div>
           </header>
           <div class="report-split">
           <div id="customers-chart"></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Customer</th><th class="num">Orders</th><th class="num">Spent</th><th class="num">Points held</th></tr></thead>
+              <thead><tr><th>Cliente</th><th class="num">Pedidos</th><th class="num">Gastado</th><th class="num">Puntos acumulados</th></tr></thead>
               <tbody id="customers-report-body"></tbody>
             </table>
           </div>
@@ -433,39 +433,39 @@
     </section>
 
     <!-- ============================== Customers ============================== -->
-    <section class="page" id="page-customers" data-title="Customers" hidden>
+    <section class="page" id="page-customers" data-title="Clientes" hidden>
       <header class="page-head">
         <div>
-          <h1 tabindex="-1">Customers</h1>
-          <p class="lede">People who refill at our stations and the eco-points they hold.</p>
+          <h1 tabindex="-1">Clientes</h1>
+          <p class="lede">Las personas que recargan en nuestras estaciones y los eco-puntos que tienen.</p>
         </div>
       </header>
 
       <form id="customer-form" class="panel form-panel">
-        <h2>Add a customer</h2>
+        <h2>Agregar un cliente</h2>
         <div class="field-row">
-          <label class="field grow">Full name <input name="nombre_completo" required maxlength="100" autocomplete="off"></label>
-          <label class="field grow">Email <input name="correo_electronico" type="email" required maxlength="120" autocomplete="off"></label>
-          <button type="submit" class="btn btn-primary">Add customer</button>
+          <label class="field grow">Nombre completo <input name="nombre_completo" required maxlength="100" autocomplete="off"></label>
+          <label class="field grow">Correo electrónico <input name="correo_electronico" type="email" required maxlength="120" autocomplete="off"></label>
+          <button type="submit" class="btn btn-primary">Agregar cliente</button>
         </div>
       </form>
 
       <article class="panel">
         <header class="panel-head panel-head-wrap">
           <div>
-            <h2>Customer list</h2>
+            <h2>Lista de clientes</h2>
             <p class="panel-sub" id="customers-count"></p>
           </div>
           <label class="search">
             <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
-            <span class="sr-only">Search customers</span>
-            <input id="customer-search" type="search" placeholder="Search by name or email">
+            <span class="sr-only">Buscar clientes</span>
+            <input id="customer-search" type="search" placeholder="Buscar por nombre o correo">
           </label>
         </header>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Name</th><th>Email</th><th class="num">Eco-points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+              <tr><th>ID</th><th>Nombre</th><th>Correo electrónico</th><th class="num">Eco-puntos</th><th class="actions"><span class="sr-only">Acciones</span></th></tr>
             </thead>
             <tbody id="customers-body"></tbody>
           </table>
@@ -474,34 +474,34 @@
     </section>
 
     <!-- ============================== Stores ============================== -->
-    <section class="page" id="page-stores" data-title="Stores" hidden>
+    <section class="page" id="page-stores" data-title="Tiendas" hidden>
       <header class="page-head">
         <div>
-          <h1 tabindex="-1">Stores</h1>
-          <p class="lede">Refill stations and where to find them.</p>
+          <h1 tabindex="-1">Tiendas</h1>
+          <p class="lede">Las estaciones de recarga y dónde encontrarlas.</p>
         </div>
       </header>
 
       <form id="store-form" class="panel form-panel">
-        <h2>Add a store</h2>
+        <h2>Agregar una tienda</h2>
         <div class="field-row">
-          <label class="field">Branch name <input name="nombre_sucursal" required maxlength="100" autocomplete="off"></label>
-          <label class="field grow">Address <input name="direccion" required maxlength="200" autocomplete="off"></label>
-          <button type="submit" class="btn btn-primary">Add store</button>
+          <label class="field">Nombre de la sucursal <input name="nombre_sucursal" required maxlength="100" autocomplete="off"></label>
+          <label class="field grow">Dirección <input name="direccion" required maxlength="200" autocomplete="off"></label>
+          <button type="submit" class="btn btn-primary">Agregar tienda</button>
         </div>
       </form>
 
       <article class="panel">
         <header class="panel-head">
           <div>
-            <h2>Store list</h2>
+            <h2>Lista de tiendas</h2>
             <p class="panel-sub" id="stores-count"></p>
           </div>
         </header>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Branch name</th><th>Address</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+              <tr><th>ID</th><th>Nombre de la sucursal</th><th>Dirección</th><th class="actions"><span class="sr-only">Acciones</span></th></tr>
             </thead>
             <tbody id="stores-body"></tbody>
           </table>
@@ -510,47 +510,47 @@
     </section>
 
     <!-- ============================== Products ============================== -->
-    <section class="page" id="page-products" data-title="Products" hidden>
+    <section class="page" id="page-products" data-title="Productos" hidden>
       <header class="page-head">
         <div>
-          <h1 tabindex="-1">Products</h1>
-          <p class="lede">Everything sold by weight or volume, with its price per unit.</p>
+          <h1 tabindex="-1">Productos</h1>
+          <p class="lede">Todo lo que se vende por peso o volumen, con su precio por unidad.</p>
         </div>
       </header>
 
       <form id="product-form" class="panel form-panel">
-        <h2>Add a product</h2>
+        <h2>Agregar un producto</h2>
         <div class="field-row">
-          <label class="field grow">Name <input name="nombre" required maxlength="100" autocomplete="off"></label>
-          <label class="field">Unit <input name="unidad_medida" required maxlength="20" list="unit-options" placeholder="liters, kg…"></label>
-          <label class="field field-price">Price per unit (USD)
+          <label class="field grow">Nombre <input name="nombre" required maxlength="100" autocomplete="off"></label>
+          <label class="field">Unidad <input name="unidad_medida" required maxlength="20" list="unit-options" placeholder="litros, kg…"></label>
+          <label class="field field-price">Precio por unidad (USD)
             <span class="input-unit input-prefix">
               <span class="unit">$</span>
-              <input name="precio_unitario" type="number" min="0" step="0.01" inputmode="decimal" required placeholder="0.00">
+              <input name="precio_unitario" type="number" min="0" step="0.01" inputmode="decimal" required placeholder="0,00">
             </span>
           </label>
-          <button type="submit" class="btn btn-primary">Add product</button>
+          <button type="submit" class="btn btn-primary">Agregar producto</button>
         </div>
       </form>
       <datalist id="unit-options">
-        <option value="liters"></option>
-        <option value="milliliters"></option>
+        <option value="litros"></option>
+        <option value="mililitros"></option>
+        <option value="gramos"></option>
         <option value="kg"></option>
-        <option value="grams"></option>
-        <option value="units"></option>
+        <option value="unidades"></option>
       </datalist>
 
       <article class="panel">
         <header class="panel-head">
           <div>
-            <h2>Product list</h2>
+            <h2>Lista de productos</h2>
             <p class="panel-sub" id="products-count"></p>
           </div>
         </header>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Name</th><th>Unit</th><th class="num">Price per unit</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+              <tr><th>ID</th><th>Nombre</th><th>Unidad</th><th class="num">Precio por unidad</th><th class="actions"><span class="sr-only">Acciones</span></th></tr>
             </thead>
             <tbody id="products-body"></tbody>
           </table>
@@ -559,41 +559,41 @@
     </section>
 
     <!-- ============================== Inventory ============================== -->
-    <section class="page" id="page-inventory" data-title="Inventory" hidden>
+    <section class="page" id="page-inventory" data-title="Inventario" hidden>
       <header class="page-head">
         <div>
-          <h1 tabindex="-1">Inventory</h1>
-          <p class="lede">Stock of each product at each store. Rows under 10 units are flagged.</p>
+          <h1 tabindex="-1">Inventario</h1>
+          <p class="lede">Stock de cada producto en cada tienda. Se marcan los registros con menos de 10 unidades.</p>
         </div>
       </header>
 
       <form id="inventory-form" class="panel form-panel">
-        <h2>Stock a product at a store</h2>
+        <h2>Agregar stock de un producto a una tienda</h2>
         <div class="field-row">
-          <label class="field">Store <select name="tienda_id" id="inventory-store" required></select></label>
-          <label class="field grow">Product <select name="producto_id" id="inventory-product" required></select></label>
-          <label class="field field-qty">Quantity <input name="cantidad_stock" type="number" min="0" step="0.01" inputmode="decimal" required placeholder="0.00"></label>
-          <button type="submit" class="btn btn-primary">Add to inventory</button>
+          <label class="field">Tienda <select name="tienda_id" id="inventory-store" required></select></label>
+          <label class="field grow">Producto <select name="producto_id" id="inventory-product" required></select></label>
+          <label class="field field-qty">Cantidad <input name="cantidad_stock" type="number" min="0" step="0.01" inputmode="decimal" required placeholder="0,00"></label>
+          <button type="submit" class="btn btn-primary">Agregar al inventario</button>
         </div>
       </form>
 
       <article class="panel">
         <header class="panel-head panel-head-wrap">
           <div>
-            <h2>Stock per store</h2>
-            <p class="panel-sub">Edit a quantity and press Enter or Save</p>
+            <h2>Stock por tienda</h2>
+            <p class="panel-sub">Edite una cantidad y presione Enter o Guardar</p>
           </div>
           <div class="filters">
-            <label class="field field-inline">Store
+            <label class="field field-inline">Tienda
               <select id="inventory-filter"></select>
             </label>
-            <label class="check"><input type="checkbox" id="inventory-low-only"> Low stock only</label>
+            <label class="check"><input type="checkbox" id="inventory-low-only"> Solo stock bajo</label>
           </div>
         </header>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Store</th><th>Product</th><th>Level</th><th class="num">Stock</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+              <tr><th>Tienda</th><th>Producto</th><th>Nivel</th><th class="num">Stock</th><th class="actions"><span class="sr-only">Acciones</span></th></tr>
             </thead>
             <tbody id="inventory-body"></tbody>
           </table>
@@ -610,14 +610,14 @@
 <dialog id="edit-dialog" class="modal" aria-labelledby="edit-title">
   <form id="edit-form" novalidate>
     <header class="modal-head">
-      <h2 id="edit-title">Edit</h2>
-      <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="icon"><use href="#i-close"/></svg></button>
+      <h2 id="edit-title">Editar</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg class="icon"><use href="#i-close"/></svg></button>
     </header>
     <div class="modal-body" id="edit-fields"></div>
     <p class="form-error" id="edit-error" role="alert" hidden></p>
     <footer class="modal-foot">
-      <button type="button" class="btn" data-close>Cancel</button>
-      <button type="submit" class="btn btn-primary">Save changes</button>
+      <button type="button" class="btn" data-close>Cancelar</button>
+      <button type="submit" class="btn btn-primary">Guardar cambios</button>
     </footer>
   </form>
 </dialog>
@@ -626,12 +626,12 @@
 <dialog id="confirm-dialog" class="modal modal-sm" aria-labelledby="confirm-title">
   <form method="dialog">
     <header class="modal-head">
-      <h2 id="confirm-title">Are you sure?</h2>
+      <h2 id="confirm-title">¿Está seguro?</h2>
     </header>
     <p class="modal-body" id="confirm-text"></p>
     <footer class="modal-foot">
-      <button value="no" class="btn" autofocus>Keep it</button>
-      <button value="yes" class="btn btn-danger" id="confirm-yes">Delete</button>
+      <button value="no" class="btn" autofocus>No, volver</button>
+      <button value="yes" class="btn btn-danger" id="confirm-yes">Eliminar</button>
     </footer>
   </form>
 </dialog>
@@ -640,16 +640,16 @@
 <dialog id="history-dialog" class="modal modal-wide" aria-labelledby="history-title">
   <header class="modal-head">
     <div>
-      <h2 id="history-title">Order history</h2>
+      <h2 id="history-title">Historial de pedidos</h2>
       <p class="panel-sub" id="history-summary"></p>
     </div>
-    <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="icon"><use href="#i-close"/></svg></button>
+    <button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div class="modal-body">
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>#</th><th>Date</th><th>Store</th><th>Products</th><th class="num">Total</th><th class="num">Points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+          <tr><th>#</th><th>Fecha</th><th>Tienda</th><th>Productos</th><th class="num">Total</th><th class="num">Puntos</th><th class="actions"><span class="sr-only">Acciones</span></th></tr>
         </thead>
         <tbody id="history-body"></tbody>
       </table>
@@ -661,10 +661,10 @@
 <dialog id="order-drawer" class="drawer" aria-labelledby="drawer-title">
   <header class="drawer-head">
     <div>
-      <h2 id="drawer-title">Order</h2>
+      <h2 id="drawer-title">Pedido</h2>
       <p class="panel-sub" id="drawer-sub"></p>
     </div>
-    <button type="button" class="icon-btn" data-close aria-label="Close order details"><svg class="icon"><use href="#i-close"/></svg></button>
+    <button type="button" class="icon-btn" data-close aria-label="Cerrar detalle del pedido"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div class="drawer-body" id="drawer-body"></div>
 </dialog>

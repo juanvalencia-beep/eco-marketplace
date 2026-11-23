@@ -578,7 +578,7 @@ button{font:inherit;color:inherit}
    <div class="ent" style="left:620px;top:20px"><h4>pedido</h4><ul>
      <li>pedido_id<span class="key">PK</span></li><li>fecha_exacta</li><li>cliente_id<span class="key fk">FK</span></li><li>tienda_id<span class="key fk">FK</span></li></ul></div>
    <div class="ent" style="left:1240px;top:20px;width:440px"><h4>detalle_pedido</h4><ul>
-     <li>pedido_id<span class="key">PK FK</span></li><li>producto_id<span class="key">PK FK</span></li><li>cantidad</li><li>precio_unitario</li></ul></div>
+     <li>pedido_id<span class="key">PK FK</span></li><li>producto_id<span class="key">PK FK</span></li><li>cantidad_comprada</li><li>precio_unitario</li></ul></div>
    <div class="ent" style="left:0;top:420px"><h4>tienda</h4><ul>
      <li>tienda_id<span class="key">PK</span></li><li>nombre_sucursal</li><li>direccion</li></ul></div>
    <div class="ent" style="left:620px;top:420px"><h4>inventario</h4><ul>
@@ -622,13 +622,13 @@ button{font:inherit;color:inherit}
      <div class="ent" id="ba-detail"><h4>detalle_pedido <span style="font-weight:500;opacity:.7;font-size:22px">líneas</span></h4><ul>
        <li>pedido_id<span class="key">PK FK</span></li>
        <li id="land1">producto_id<span class="key">PK FK</span></li>
-       <li id="land2">cantidad</li>
+       <li id="land2">cantidad_comprada</li>
        <li id="land3" class="new-row">precio_unitario</li></ul></div>
     </div>
-    <p class="after-note" id="ba-note2">Un pedido, muchas líneas. El precio se copia al momento de la compra, así un cambio de precio posterior no reescribe la historia. Al borrar un pedido se borran sus líneas.</p>
+    <p class="after-note" id="ba-note2">Un pedido, muchas líneas. El precio se copia al momento de la compra, así un cambio de precio posterior no reescribe la historia. Todas las llaves foráneas son ON DELETE RESTRICT.</p>
    </div>
    <div class="ghost" id="g1">producto_id</div>
-   <div class="ghost" id="g2">cantidad</div>
+   <div class="ghost" id="g2">cantidad_comprada</div>
   </div>
  </div>
 </section>
@@ -641,18 +641,18 @@ button{font:inherit;color:inherit}
 <pre class="code" id="code"><span class="kw">CREATE TABLE</span> detalle_pedido (
   pedido_id        <span class="ty">INTEGER</span>        <span class="kw">NOT NULL</span>,
   producto_id      <span class="ty">INTEGER</span>        <span class="kw">NOT NULL</span>,
-  cantidad         <span class="ty">DECIMAL</span>(<span class="nu">10</span>,<span class="nu">2</span>)  <span class="kw">NOT NULL</span>,
+  cantidad_comprada <span class="ty">DECIMAL</span>(<span class="nu">10</span>,<span class="nu">2</span>) <span class="kw">NOT NULL</span>,
   precio_unitario  <span class="ty">DECIMAL</span>(<span class="nu">10</span>,<span class="nu">2</span>)  <span class="kw">NOT NULL</span>,
   <span class="kw">CONSTRAINT</span> <span class="cn">pk_detalle_pedido</span>
     <span class="kw">PRIMARY KEY</span> (pedido_id, producto_id),
   <span class="kw">CONSTRAINT</span> <span class="cn">fk_detalle_pedido_pedido</span>
     <span class="kw">FOREIGN KEY</span> (pedido_id) <span class="kw">REFERENCES</span> pedido
-    <span class="kw">ON DELETE CASCADE</span>,
+    <span class="kw">ON DELETE RESTRICT</span>,
   <span class="kw">CONSTRAINT</span> <span class="cn">fk_detalle_pedido_producto</span>
     <span class="kw">FOREIGN KEY</span> (producto_id) <span class="kw">REFERENCES</span> producto
     <span class="kw">ON DELETE RESTRICT</span>,
-  <span class="kw">CONSTRAINT</span> <span class="cn">ck_detalle_pedido_cantidad_positiva</span>
-    <span class="kw">CHECK</span> (cantidad &gt; <span class="nu">0</span>)
+  <span class="kw">CONSTRAINT</span> <span class="cn">ck_detalle_pedido_cantidad_comprada_positiva</span>
+    <span class="kw">CHECK</span> (cantidad_comprada &gt; <span class="nu">0</span>)
 );
 <span class="kw">CREATE INDEX</span> <span class="cn">idx_detalle_pedido_producto_id</span>
     <span class="kw">ON</span> detalle_pedido (producto_id);<span class="caret" id="caret"></span></pre>
@@ -660,7 +660,7 @@ button{font:inherit;color:inherit}
   <div style="padding-top:150px">
    <ul class="prefixes" data-a="kids" data-at=".5">
     <li><b>pk_</b><span>Llave primaria<small>pk_inventario (tienda_id, producto_id)</small></span></li>
-    <li><b>fk_</b><span>Llave foránea, CASCADE o RESTRICT<small>fk_pedido_cliente</small></span></li>
+    <li><b>fk_</b><span>Llave foránea, siempre ON DELETE RESTRICT<small>fk_pedido_cliente</small></span></li>
     <li><b>uq_</b><span>Valor único<small>uq_cliente_correo_electronico</small></span></li>
     <li><b>ck_</b><span>Regla CHECK<small>ck_inventario_cantidad_stock_no_negativa</small></span></li>
     <li><b>idx_</b><span>Índice para búsquedas frecuentes<small>idx_pedido_fecha_exacta</small></span></li>
@@ -784,13 +784,13 @@ button{font:inherit;color:inherit}
     <svg viewBox="0 0 300 190" aria-hidden="true"><line class="base" x1="0" y1="2" x2="0" y2="188"/>
      <rect class="bar top" x="0" y="14" width="270" height="36" rx="6"/><rect class="bar" x="0" y="76" width="200" height="36" rx="6"/><rect class="bar" x="0" y="138" width="130" height="36" rx="6"/></svg>
     <h3>Ventas por tienda</h3><code>/reportes/ventas-por-tienda</code>
-    <p>SUM(cantidad × precio_unitario) GROUP BY tienda</p>
+    <p>SUM(cantidad_comprada × precio_unitario) GROUP BY tienda</p>
    </div>
    <div class="rep">
     <svg viewBox="0 0 300 190" aria-hidden="true"><line class="base" x1="0" y1="188" x2="300" y2="188"/>
      <rect class="bar top v" x="10" y="20" width="50" height="168" rx="6"/><rect class="bar v" x="80" y="60" width="50" height="128" rx="6"/><rect class="bar v" x="150" y="96" width="50" height="92" rx="6"/><rect class="bar v" x="220" y="130" width="50" height="58" rx="6"/></svg>
     <h3>Productos más vendidos</h3><code>/reportes/productos-mas-vendidos</code>
-    <p>SUM(cantidad) GROUP BY producto ORDER BY DESC</p>
+    <p>SUM(cantidad_comprada) GROUP BY producto ORDER BY DESC</p>
    </div>
    <div class="rep">
     <svg viewBox="0 0 300 190" aria-hidden="true">
@@ -819,23 +819,25 @@ button{font:inherit;color:inherit}
    <!-- Actualizar data-count si cambia el numero de pruebas que pasan en pytest -->
    <div class="big" id="test-count" data-count="71">71</div>
    <div class="big-l" data-a="mask" data-at=".6">pruebas pasan en pytest</div>
-   <p class="big-s" data-a="mask" data-at=".8">Los 13 casos del documento de diseño, 4 nuevos para el detalle de pedido (TC-14 a TC-17) y pruebas de la API para cada ruta CRUD, transacción y reporte.</p>
+   <p class="big-s" data-a="mask" data-at=".8">Los 15 casos del documento de diseño (TC-01 a TC-15, con los nuevos del detalle de pedido) y pruebas de la API para cada ruta CRUD, transacción y reporte.</p>
   </div>
   <div>
   <ul class="tcs" id="tcs">
    <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-01</span><span>Registrar cliente<small>FR-01</small></span></li>
-   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-08</span><span>Historial de pedidos<small>FR-04</small></span></li>
-   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-02</span><span>Registrar inventario<small>FR-02</small></span></li>
    <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-09</span><span>El pedido descuenta stock<small>FR-05</small></span></li>
-   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-03</span><span>50 actualizaciones concurrentes<small>NFR-01</small></span></li>
+   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-02</span><span>Registrar inventario<small>FR-02</small></span></li>
    <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-10</span><span>Sin stock, rollback total<small>FR-05</small></span></li>
-   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-04</span><span>Inventario duplicado rechazado<small>FR-02</small></span></li>
+   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-03</span><span>50 actualizaciones concurrentes<small>NFR-01</small></span></li>
    <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-11</span><span>Reporte de stock bajo<small>FR-06</small></span></li>
-   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-05</span><span>Registrar pedido<small>FR-03</small></span></li>
+   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-04</span><span>Inventario duplicado rechazado<small>FR-02</small></span></li>
    <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-12</span><span>Correo duplicado rechazado<small>NFR-02</small></span></li>
-   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-06</span><span>Cliente inexistente rechazado<small>FR-03</small></span></li>
+   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-05</span><span>Registrar pedido<small>FR-03</small></span></li>
    <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-13</span><span>El script crea todo el esquema<small>NFR-03</small></span></li>
+   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-06</span><span>Cliente inexistente rechazado<small>FR-03</small></span></li>
+   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-14</span><span>Mismo producto dos veces, rechazado<small>FR-03</small></span></li>
    <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-07</span><span>La cantidad debe ser positiva<small>FR-03</small></span></li>
+   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-15</span><span>Línea con pedido o producto inexistente<small>FR-03</small></span></li>
+   <li><svg viewBox="0 0 30 30"><path d="M6 16l6 6 12-14"/></svg><span class="id">TC-08</span><span>Historial de pedidos<small>FR-04</small></span></li>
   </ul>
    <div class="nfr" data-a="rise" data-at="1.8"><span class="n">50 / &lt;2 s</span><p>pedidos concurrentes sobre el mismo frasco, con stock final exacto (NFR-01)</p></div>
   </div>

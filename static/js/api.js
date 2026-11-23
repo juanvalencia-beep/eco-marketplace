@@ -13,7 +13,7 @@ async function request(method, path, body) {
   try {
     res = await fetch(API_BASE + path, options);
   } catch (err) {
-    throw new Error("Could not connect to the server. Is the Flask app running?");
+    throw new Error("No se pudo conectar con el servidor. ¿Está corriendo la app de Flask?");
   }
 
   const text = await res.text();
@@ -27,7 +27,7 @@ async function request(method, path, body) {
   }
 
   if (!res.ok) {
-    const message = data && data.error ? data.error : `Request failed (${res.status})`;
+    const message = data && data.error ? data.error : `La solicitud falló (${res.status})`;
     const error = new Error(message);
     error.status = res.status;
     throw error;

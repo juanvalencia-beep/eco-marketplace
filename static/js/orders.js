@@ -9,7 +9,7 @@
 /* ============================== cart ============================== */
 
 const cart = {
-  lines: [], // [{ producto_id, cantidad }]
+  lines: [], // [{ producto_id, cantidad_comprada }]
   stock: new Map(), // producto_id -> inventory row of the chosen store
 };
 
@@ -19,10 +19,10 @@ async function loadOrdersPage() {
   } catch (err) {
     showError(err);
   }
-  fillSelect($("#cart-customer"), customerOptions("Choose a customer"));
-  fillSelect($("#cart-store"), storeOptions("Choose a store"));
-  fillSelect($("#orders-filter-customer"), customerOptions("All customers"));
-  fillSelect($("#orders-filter-store"), storeOptions("All stores"));
+  fillSelect($("#cart-customer"), customerOptions("Elija un cliente"));
+  fillSelect($("#cart-store"), storeOptions("Elija una tienda"));
+  fillSelect($("#orders-filter-customer"), customerOptions("Todos los clientes"));
+  fillSelect($("#orders-filter-store"), storeOptions("Todas las tiendas"));
   await loadCartStock();
   loadOrders();
 }
@@ -51,10 +51,10 @@ function renderProductPicker() {
   const options = lookups.products.map((p) => {
     const row = cart.stock.get(p.producto_id);
     const usable = row && row.cantidad_stock > 0 && !inCart.has(p.producto_id);
-    const note = !row ? "not stocked here" : inCart.has(p.producto_id) ? "in the order" : row.cantidad_stock > 0 ? `${qty(row.cantidad_stock)} ${p.unidad_medida} left` : "out of stock";
-    return `<option value="${p.producto_id}" ${usable ? "" : "disabled"}>${esc(p.nombre)}, ${esc(money(p.precio_unitario))}/${esc(p.unidad_medida)} (${esc(note)})</option>`;
+    const note = !row ? "no disponible en esta tienda" : inCart.has(p.producto_id) ? "ya está en el pedido" : row.cantidad_stock > 0 ? `quedan ${qty(row.cantidad_stock)} ${unitFor(row.cantidad_stock, p.unidad_medida)}` : "agotado";
+    return `<option value="${p.producto_id}" ${usable ? "" : "disabled"}>${esc(p.nombre)}, ${esc(money(p.precio_unitario))}/${esc(perUnit(p.unidad_medida))} (${esc(note)})</option>`;
   });
-  fillSelect(select, `<option value="">${$("#cart-store").value ? "Choose a product" : "Choose a store first"}</option>` + options.join(""));
+  fillSelect(select, `<option value="">${$("#cart-store").value ? "Elija un producto" : "Primero elija una tienda"}</option>` + options.join(""));
   if (select.selectedOptions[0]?.disabled) select.value = "";
   updateAddHint();
 }
@@ -65,14 +65,14 @@ function updateAddHint() {
   const hint = $("#cart-hint");
   hint.classList.remove("is-error");
   if (!$("#cart-store").value) {
-    hint.textContent = "Choose a store to see the products it stocks.";
+    hint.textContent = "Elija una tienda para ver los productos que tiene en stock.";
   } else if (!product) {
-    hint.textContent = cart.stock.size ? "Pick a product and a quantity, then add the line." : "This store has no products in stock yet.";
+    hint.textContent = cart.stock.size ? "Elija un producto y una cantidad, y luego agregue la línea." : "Esta tienda aún no tiene productos en stock.";
   } else {
     const row = cart.stock.get(product.producto_id);
     const q = Number($("#cart-qty").value);
-    hint.textContent = `${qty(row.cantidad_stock)} ${product.unidad_medida} available at ${money(product.precio_unitario)} per ${product.unidad_medida}.` +
-      (q > 0 ? ` This line: ${money(lineSubtotal(q, product.precio_unitario))}, ${plural(pointsFor(q), "eco-point")}.` : "");
+    hint.textContent = `Disponible: ${qty(row.cantidad_stock)} ${unitFor(row.cantidad_stock, product.unidad_medida)} a ${money(product.precio_unitario)} por ${perUnit(product.unidad_medida)}.` +
+      (q > 0 ? ` Esta línea: ${money(lineSubtotal(q, product.precio_unitario))}, ${plural(pointsFor(q), "eco-punto")}.` : "");
   }
 }
 
@@ -85,12 +85,12 @@ function addCartLine() {
     hint.classList.add("is-error");
     focus.focus();
   };
-  if (!product) return fail("Choose a product first.", $("#cart-product"));
-  if (!(q > 0)) return fail("Enter a quantity greater than 0.", $("#cart-qty"));
+  if (!product) return fail("Primero elija un producto.", $("#cart-product"));
+  if (!(q > 0)) return fail("Ingrese una cantidad mayor que 0.", $("#cart-qty"));
   const available = cart.stock.get(product.producto_id).cantidad_stock;
-  if (q > available) return fail(`Only ${qty(available)} ${product.unidad_medida} of ${product.nombre} available here.`, $("#cart-qty"));
+  if (q > available) return fail(`Solo hay ${qty(available)} ${unitFor(available, product.unidad_medida)} de ${product.nombre} disponibles en esta tienda.`, $("#cart-qty"));
 
-  cart.lines.push({ producto_id: product.producto_id, cantidad: Math.round(q * 100) / 100 });
+  cart.lines.push({ producto_id: product.producto_id, cantidad_comprada: Math.round(q * 100) / 100 });
   $("#cart-qty").value = "";
   $("#cart-product").value = "";
   renderProductPicker();
@@ -101,7 +101,7 @@ function addCartLine() {
 function renderCart() {
   const body = $("#cart-body");
   if (!cart.lines.length) {
-    body.innerHTML = emptyRow(7, "No lines yet", $("#cart-store").value ? "Add products above. Each product can appear once per order." : "Choose a customer and a store, then add products.");
+    body.innerHTML = emptyRow(7, "Aún no hay líneas", $("#cart-store").value ? "Agregue productos arriba. Cada producto puede aparecer una sola vez por pedido." : "Elija un cliente y una tienda, y luego agregue productos.");
   } else {
     body.innerHTML = cart.lines
       .map((line, i) => {
@@ -110,16 +110,16 @@ function renderCart() {
         const available = row ? row.cantidad_stock : 0;
         return `<tr data-index="${i}">
           <td class="strong">${esc(p.nombre)}</td>
-          <td class="num nowrap" data-label="Unit price"><span>${esc(money(p.precio_unitario))} <span class="muted">/ ${esc(p.unidad_medida)}</span></span></td>
-          <td class="num nowrap" data-label="In stock"><span>${esc(qty(available))} <span class="muted">${esc(p.unidad_medida)}</span></span></td>
-          <td class="num" data-label="Quantity">
-            <input type="number" class="qty-input" min="0.01" step="0.01" inputmode="decimal" value="${line.cantidad}"
-              aria-label="Quantity of ${esc(p.nombre)}">
+          <td class="num nowrap" data-label="Precio unitario"><span>${esc(money(p.precio_unitario))} <span class="muted">/ ${esc(perUnit(p.unidad_medida))}</span></span></td>
+          <td class="num nowrap" data-label="En stock"><span>${esc(qty(available))} <span class="muted">${esc(unitFor(available, p.unidad_medida))}</span></span></td>
+          <td class="num" data-label="Cantidad">
+            <input type="number" class="qty-input" min="0.01" step="0.01" inputmode="decimal" value="${line.cantidad_comprada}"
+              aria-label="Cantidad de ${esc(p.nombre)}">
           </td>
           <td class="num strong" data-cell="subtotal" data-label="Subtotal"></td>
-          <td class="num" data-cell="points" data-label="Eco-points"></td>
+          <td class="num" data-cell="points" data-label="Eco-puntos"></td>
           <td class="actions">
-            <button type="button" class="icon-btn icon-btn-danger" data-remove="${i}" aria-label="Remove ${esc(p.nombre)}">
+            <button type="button" class="icon-btn icon-btn-danger" data-remove="${i}" aria-label="Quitar ${esc(p.nombre)}">
               <svg class="icon"><use href="#i-trash"/></svg>
             </button>
           </td>
@@ -137,13 +137,13 @@ function updateCartRow(tr) {
   const p = findProduct(line.producto_id);
   const row = cart.stock.get(line.producto_id);
   const available = row ? row.cantidad_stock : 0;
-  const tooMuch = line.cantidad > available;
-  const invalid = !(line.cantidad > 0) || tooMuch;
+  const tooMuch = line.cantidad_comprada > available;
+  const invalid = !(line.cantidad_comprada > 0) || tooMuch;
   tr.classList.toggle("is-invalid", invalid);
   tr.querySelector(".qty-input").setAttribute("aria-invalid", invalid);
-  tr.querySelector('[data-cell="subtotal"]').textContent = money(lineSubtotal(line.cantidad || 0, p.precio_unitario));
-  tr.querySelector('[data-cell="points"]').innerHTML = `<span class="points">${int(pointsFor(line.cantidad || 0))}</span>`;
-  tr.title = tooMuch ? `Only ${qty(available)} ${p.unidad_medida} available` : "";
+  tr.querySelector('[data-cell="subtotal"]').textContent = money(lineSubtotal(line.cantidad_comprada || 0, p.precio_unitario));
+  tr.querySelector('[data-cell="points"]').innerHTML = `<span class="points">${int(pointsFor(line.cantidad_comprada || 0))}</span>`;
+  tr.title = tooMuch ? `Solo hay ${qty(available)} ${unitFor(available, p.unidad_medida)} disponibles` : "";
 }
 
 function updateSummary() {
@@ -155,12 +155,12 @@ function updateSummary() {
   for (const line of cart.lines) {
     const p = findProduct(line.producto_id);
     const row = cart.stock.get(line.producto_id);
-    total += lineSubtotal(line.cantidad || 0, p.precio_unitario);
-    points += pointsFor(line.cantidad || 0);
-    if (!(line.cantidad > 0) || !row || line.cantidad > row.cantidad_stock) valid = false;
+    total += lineSubtotal(line.cantidad_comprada || 0, p.precio_unitario);
+    points += pointsFor(line.cantidad_comprada || 0);
+    if (!(line.cantidad_comprada > 0) || !row || line.cantidad_comprada > row.cantidad_stock) valid = false;
   }
-  $("#sum-customer").textContent = customer ? customer.nombre_completo : "Not chosen";
-  $("#sum-store").textContent = store ? store.nombre_sucursal : "Not chosen";
+  $("#sum-customer").textContent = customer ? customer.nombre_completo : "Sin elegir";
+  $("#sum-store").textContent = store ? store.nombre_sucursal : "Sin elegir";
   $("#sum-lines").textContent = cart.lines.length;
   $("#sum-total").textContent = money(total);
   $("#sum-points").textContent = int(points);
@@ -183,7 +183,7 @@ $("#cart-qty").addEventListener("keydown", (e) => {
 $("#cart-body").addEventListener("input", (e) => {
   if (!e.target.classList.contains("qty-input")) return;
   const tr = e.target.closest("tr");
-  cart.lines[Number(tr.dataset.index)].cantidad = Number(e.target.value);
+  cart.lines[Number(tr.dataset.index)].cantidad_comprada = Number(e.target.value);
   updateCartRow(tr);
   updateSummary();
 });
@@ -208,15 +208,15 @@ $("#cart-form").addEventListener("submit", async (e) => {
   const body = {
     cliente_id: Number($("#cart-customer").value),
     tienda_id: Number($("#cart-store").value),
-    detalles: cart.lines.map((l) => ({ producto_id: l.producto_id, cantidad: l.cantidad })),
+    detalles: cart.lines.map((l) => ({ producto_id: l.producto_id, cantidad_comprada: l.cantidad_comprada })),
   };
   await busy($("#cart-submit"), async () => {
     try {
       const order = await api.post("/pedidos", body);
-      toast(`Order #${order.pedido_id} placed: ${money(order.total)}. ${order.nombre_completo} earned ${plural(order.puntos_ganados, "eco-point")}.`);
+      toast(`Pedido #${order.pedido_id} registrado: ${money(order.total)}. ${order.nombre_completo} ganó ${plural(order.puntos_ganados, "eco-punto")}.`);
       cart.lines = [];
       await loadLookups(); // customer points changed
-      fillSelect($("#cart-customer"), customerOptions("Choose a customer"));
+      fillSelect($("#cart-customer"), customerOptions("Elija un cliente"));
       await loadCartStock(); // stock changed
       loadOrders();
     } catch (err) {
@@ -238,18 +238,18 @@ async function loadOrders() {
   try {
     const orders = await api.get("/pedidos" + (filtered ? "?" + params : ""));
     const total = orders.reduce((sum, o) => sum + o.total, 0);
-    $("#orders-count").textContent = `${plural(orders.length, "order")}, ${money(total)}${filtered ? " (filtered)" : ""}, newest first`;
+    $("#orders-count").textContent = `${plural(orders.length, "pedido")}, ${money(total)}${filtered ? " (filtrado)" : ""}, más recientes primero`;
     setRows(
       $("#orders-body"),
       orders.length
         ? orders.map((o) => orderRow(o, true)).join("")
         : filtered
-          ? emptyRow(8, "No orders match these filters", "Choose “All customers” or “All stores” to widen the list.")
-          : emptyRow(8, "No orders yet", "Place the first one with the form above.")
+          ? emptyRow(8, "Ningún pedido coincide con estos filtros", "Elija “Todos los clientes” o “Todas las tiendas” para ampliar la lista.")
+          : emptyRow(8, "Aún no hay pedidos", "Registre el primero con el formulario de arriba.")
     );
   } catch (err) {
     showError(err);
-    setRows($("#orders-body"), emptyRow(8, "Could not load orders", esc(err.message)));
+    setRows($("#orders-body"), emptyRow(8, "No se pudieron cargar los pedidos", esc(err.message)));
   }
 }
 
@@ -290,8 +290,8 @@ async function openOrder(id) {
 
 function renderDrawer() {
   const o = currentOrder;
-  $("#drawer-title").textContent = `Order #${o.pedido_id}`;
-  $("#drawer-sub").textContent = `${o.nombre_completo} at ${o.nombre_sucursal}`;
+  $("#drawer-title").textContent = `Pedido #${o.pedido_id}`;
+  $("#drawer-sub").textContent = `${o.nombre_completo} en ${o.nombre_sucursal}`;
   const onlyOne = o.detalles.length === 1;
   const inOrder = new Set(o.detalles.map((d) => d.producto_id));
 
@@ -300,51 +300,51 @@ function renderDrawer() {
     .map((p) => {
       const row = drawerStock.get(p.producto_id);
       const usable = row && row.cantidad_stock > 0;
-      const note = !row ? "not stocked here" : usable ? `${qty(row.cantidad_stock)} ${p.unidad_medida} left` : "out of stock";
-      return `<option value="${p.producto_id}" ${usable ? "" : "disabled"}>${esc(p.nombre)}, ${esc(money(p.precio_unitario))}/${esc(p.unidad_medida)} (${esc(note)})</option>`;
+      const note = !row ? "no disponible en esta tienda" : usable ? `quedan ${qty(row.cantidad_stock)} ${unitFor(row.cantidad_stock, p.unidad_medida)}` : "agotado";
+      return `<option value="${p.producto_id}" ${usable ? "" : "disabled"}>${esc(p.nombre)}, ${esc(money(p.precio_unitario))}/${esc(perUnit(p.unidad_medida))} (${esc(note)})</option>`;
     })
     .join("");
 
   $("#drawer-body").innerHTML = `
     <section class="drawer-section">
       <dl class="facts">
-        <div><dt>Customer</dt><dd>${esc(o.nombre_completo)}</dd></div>
-        <div><dt>Store</dt><dd>${esc(o.nombre_sucursal)}</dd></div>
+        <div><dt>Cliente</dt><dd>${esc(o.nombre_completo)}</dd></div>
+        <div><dt>Tienda</dt><dd>${esc(o.nombre_sucursal)}</dd></div>
         <div><dt>Total</dt><dd class="fact-big">${esc(money(o.total))}</dd></div>
-        <div><dt>Eco-points</dt><dd class="fact-big points-text">${int(o.puntos_ganados)}</dd></div>
+        <div><dt>Eco-puntos</dt><dd class="fact-big points-text">${int(o.puntos_ganados)}</dd></div>
       </dl>
     </section>
 
     <form class="drawer-section date-form" id="date-form">
-      <label class="field grow">Order date and time
+      <label class="field grow">Fecha y hora del pedido
         <input type="datetime-local" step="1" id="order-date" value="${esc(o.fecha_exacta.slice(0, 19))}" required>
       </label>
-      <button type="submit" class="btn">Save date</button>
+      <button type="submit" class="btn">Guardar fecha</button>
     </form>
 
     <section class="drawer-section">
-      <h3>Products <span class="muted">${o.num_productos} ${o.num_productos === 1 ? "line" : "lines"}, ${esc(qty(o.cantidad_total))} units</span></h3>
+      <h3>Productos <span class="muted">${o.num_productos} ${o.num_productos === 1 ? "línea" : "líneas"}, cantidad total ${esc(qty(o.cantidad_total))}</span></h3>
       <div class="table-wrap">
         <table class="lines-table stack-mobile">
           <thead>
-            <tr><th>Product</th><th class="num">Quantity</th><th class="num">Price</th><th class="num">Subtotal</th><th class="num">Points</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+            <tr><th>Producto</th><th class="num">Cantidad</th><th class="num">Precio</th><th class="num">Subtotal</th><th class="num">Puntos</th><th class="actions"><span class="sr-only">Acciones</span></th></tr>
           </thead>
           <tbody>
             ${o.detalles
               .map(
                 (d) => `<tr data-producto="${d.producto_id}" data-name="${esc(d.nombre_producto)}">
                   <td><span class="strong">${esc(d.nombre_producto)}</span><span class="cell-sub">${esc(d.unidad_medida)}</span></td>
-                  <td class="num" data-label="Quantity">
-                    <input type="number" class="qty-input" min="0.01" step="0.01" inputmode="decimal" value="${d.cantidad}"
-                      data-original="${d.cantidad}" aria-label="Quantity of ${esc(d.nombre_producto)} in ${esc(d.unidad_medida)}">
+                  <td class="num" data-label="Cantidad">
+                    <input type="number" class="qty-input" min="0.01" step="0.01" inputmode="decimal" value="${d.cantidad_comprada}"
+                      data-original="${d.cantidad_comprada}" aria-label="Cantidad de ${esc(d.nombre_producto)} en ${esc(d.unidad_medida)}">
                   </td>
-                  <td class="num nowrap" data-label="Price">${esc(money(d.precio_unitario))}</td>
+                  <td class="num nowrap" data-label="Precio">${esc(money(d.precio_unitario))}</td>
                   <td class="num strong nowrap" data-label="Subtotal">${esc(money(d.subtotal))}</td>
-                  <td class="num" data-label="Eco-points"><span class="points">${int(d.puntos)}</span></td>
+                  <td class="num" data-label="Eco-puntos"><span class="points">${int(d.puntos)}</span></td>
                   <td class="actions nowrap">
-                    <button type="button" class="btn btn-sm" data-line="save" disabled>Save</button>
+                    <button type="button" class="btn btn-sm" data-line="save" disabled>Guardar</button>
                     <button type="button" class="icon-btn icon-btn-danger" data-line="remove" ${onlyOne ? "disabled" : ""}
-                      aria-label="Remove ${esc(d.nombre_producto)}" title="${onlyOne ? "An order needs at least one product" : "Remove line"}">
+                      aria-label="Quitar ${esc(d.nombre_producto)}" title="${onlyOne ? "Un pedido necesita al menos un producto" : "Quitar línea"}">
                       <svg class="icon"><use href="#i-trash"/></svg>
                     </button>
                   </td>
@@ -354,31 +354,31 @@ function renderDrawer() {
           </tbody>
         </table>
       </div>
-      ${onlyOne ? '<p class="hint">This is the only product, so it can’t be removed. Cancel the order instead.</p>' : ""}
-      <p class="hint">Prices were fixed when the order was placed. New lines use today’s price.</p>
+      ${onlyOne ? '<p class="hint">Es el único producto, así que no se puede quitar. Si es necesario, anule el pedido.</p>' : ""}
+      <p class="hint">Los precios quedaron fijos al registrar el pedido. Las líneas nuevas usan el precio actual.</p>
     </section>
 
     <form class="drawer-section add-line" id="add-line-form">
-      <h3>Add a product</h3>
+      <h3>Agregar un producto</h3>
       <div class="field-row">
-        <label class="field grow">Product
+        <label class="field grow">Producto
           <select name="producto_id" required>
-            <option value="">${addOptions ? "Choose a product" : "Every product is already in this order"}</option>${addOptions}
+            <option value="">${addOptions ? "Elija un producto" : "Todos los productos ya están en este pedido"}</option>${addOptions}
           </select>
         </label>
-        <label class="field field-qty">Quantity
-          <input name="cantidad" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0.00">
+        <label class="field field-qty">Cantidad
+          <input name="cantidad_comprada" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0,00">
         </label>
-        <button type="submit" class="btn"><svg class="icon"><use href="#i-plus"/></svg>Add line</button>
+        <button type="submit" class="btn"><svg class="icon"><use href="#i-plus"/></svg>Agregar línea</button>
       </div>
     </form>
 
     <section class="drawer-section danger-zone">
       <div>
-        <h3>Cancel order</h3>
-        <p class="hint">Stock returns to ${esc(o.nombre_sucursal)} and ${plural(o.puntos_ganados, "eco-point")} are taken back from ${esc(o.nombre_completo)}.</p>
+        <h3>Anular pedido</h3>
+        <p class="hint">El stock vuelve a ${esc(o.nombre_sucursal)} y se le descuentan ${plural(o.puntos_ganados, "eco-punto")} a ${esc(o.nombre_completo)}.</p>
       </div>
-      <button type="button" class="btn btn-danger" id="cancel-order">Cancel order</button>
+      <button type="button" class="btn btn-danger" id="cancel-order">Anular pedido</button>
     </section>`;
 }
 
@@ -426,22 +426,22 @@ $("#drawer-body").addEventListener("click", async (e) => {
       const value = Number(tr.querySelector(".qty-input").value);
       await busy(lineBtn, async () => {
         try {
-          const line = await api.put(path, { cantidad: value });
-          toast(`${name} changed to ${qty(line.cantidad)} ${line.unidad_medida}.`);
+          const line = await api.put(path, { cantidad_comprada: value });
+          toast(`${name}: cantidad cambiada a ${qty(line.cantidad_comprada)} ${unitFor(line.cantidad_comprada, line.unidad_medida)}.`);
           await afterOrderChange();
         } catch (err) {
           showError(err);
         }
       });
     } else {
-      const ok = await confirmAction(`Remove ${name} from order #${currentOrder.pedido_id}? Its stock goes back to the store.`, {
-        title: "Remove product",
-        yes: "Remove product",
+      const ok = await confirmAction(`¿Quitar ${name} del pedido #${currentOrder.pedido_id}? Su stock vuelve a la tienda.`, {
+        title: "Quitar producto",
+        yes: "Quitar producto",
       });
       if (!ok) return;
       try {
         await api.del(path);
-        toast(`${name} removed from order #${currentOrder.pedido_id}.`);
+        toast(`${name} se quitó del pedido #${currentOrder.pedido_id}.`);
         await afterOrderChange();
       } catch (err) {
         showError(err);
@@ -453,14 +453,14 @@ $("#drawer-body").addEventListener("click", async (e) => {
   if (e.target.closest("#cancel-order")) {
     const o = currentOrder;
     const ok = await confirmAction(
-      `Cancel order #${o.pedido_id} (${money(o.total)})? The stock goes back to ${o.nombre_sucursal} and ${plural(o.puntos_ganados, "eco-point")} are removed from ${o.nombre_completo}.`,
-      { title: "Cancel order", yes: "Cancel order" }
+      `¿Anular el pedido #${o.pedido_id} (${money(o.total)})? El stock vuelve a ${o.nombre_sucursal} y se le descuentan ${plural(o.puntos_ganados, "eco-punto")} a ${o.nombre_completo}.`,
+      { title: "Anular pedido", yes: "Anular pedido" }
     );
     if (!ok) return;
     try {
       await api.del("/pedidos/" + o.pedido_id);
       closeDialog($("#order-drawer"));
-      toast(`Order #${o.pedido_id} cancelled.`);
+      toast(`Pedido #${o.pedido_id} anulado.`);
       refreshBehindDrawer();
     } catch (err) {
       showError(err);
@@ -481,7 +481,7 @@ $("#drawer-body").addEventListener("submit", async (e) => {
     await busy(button, async () => {
       try {
         await api.put("/pedidos/" + currentOrder.pedido_id, { fecha_exacta: $("#order-date").value });
-        toast(`Order #${currentOrder.pedido_id} date saved.`);
+        toast(`Fecha del pedido #${currentOrder.pedido_id} guardada.`);
         await afterOrderChange();
       } catch (err) {
         showError(err);
@@ -493,9 +493,9 @@ $("#drawer-body").addEventListener("submit", async (e) => {
       try {
         const line = await api.post(`/pedidos/${currentOrder.pedido_id}/detalles`, {
           producto_id: Number(data.producto_id),
-          cantidad: Number(data.cantidad),
+          cantidad_comprada: Number(data.cantidad_comprada),
         });
-        toast(`${line.nombre_producto} added: ${qty(line.cantidad)} ${line.unidad_medida}, +${plural(line.puntos, "eco-point")}.`);
+        toast(`${line.nombre_producto} agregado: ${qty(line.cantidad_comprada)} ${unitFor(line.cantidad_comprada, line.unidad_medida)}, +${plural(line.puntos, "eco-punto")}.`);
         await afterOrderChange();
       } catch (err) {
         showError(err);

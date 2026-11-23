@@ -18,9 +18,9 @@ function rangeQuery(extra = {}) {
 
 function rangeText() {
   const { desde, hasta } = reportRange();
-  if (!desde && !hasta) return "All time";
-  if (desde && hasta) return `${dayLabel(desde, true)} to ${dayLabel(hasta, true)}`;
-  return desde ? `From ${dayLabel(desde, true)}` : `Until ${dayLabel(hasta, true)}`;
+  if (!desde && !hasta) return "todo el historial";
+  if (desde && hasta) return `del ${dayLabel(desde, true)} al ${dayLabel(hasta, true)}`;
+  return desde ? `desde el ${dayLabel(desde, true)}` : `hasta el ${dayLabel(hasta, true)}`;
 }
 
 function setPreset(days) {
@@ -50,11 +50,11 @@ async function loadReportsPage() {
 async function runReports() {
   const { desde, hasta } = reportRange();
   if (desde && hasta && desde > hasta) {
-    toast("The “From” date must be on or before the “To” date.", "error");
+    toast("La fecha “Desde” debe ser igual o anterior a la fecha “Hasta”.", "error");
     $("#range-desde").focus();
     return;
   }
-  $("#print-range").textContent = `Eco-Marketplace reports, ${rangeText()}. Printed ${dayLabel(daysAgo(0), true)}.`;
+  $("#print-range").textContent = `Reportes de Eco-Marketplace, ${rangeText()}. Impreso el ${dayLabel(daysAgo(0), true)}.`;
   loadingRows($("#stores-report-body"), 4, 3);
   loadingRows($("#products-report-body"), 4, 5);
   loadingRows($("#customers-report-body"), 4, 5);
@@ -75,7 +75,7 @@ async function loadDailyReport() {
     dias = Math.round((parseDay(today) - parseDay(desde)) / 86400000) + 1;
     if (dias > 365) {
       dias = 365;
-      note = "The API covers at most the last 365 days.";
+      note = "La API cubre como máximo los últimos 365 días.";
     }
   } else {
     dias = 365; // no start date: take the whole year the API allows
@@ -89,9 +89,9 @@ async function loadDailyReport() {
       // "All time": start at the first day with sales instead of a year of zeros
       const first = rows.findIndex((r) => r.pedidos > 0);
       rows = first === -1 ? [] : rows.slice(first);
-      note = "Daily figures cover up to the last 365 days.";
+      note = "Las cifras diarias cubren como máximo los últimos 365 días.";
     }
-    if (hasta && hasta > today) note = "Days after today have no sales yet.";
+    if (hasta && hasta > today) note = "Los días posteriores a hoy aún no tienen ventas.";
     reportData.daily = rows;
 
     const total = rows.reduce((s, r) => s + r.ingresos, 0);
@@ -99,17 +99,17 @@ async function loadDailyReport() {
     const best = rows.reduce((b, r) => (r.ingresos > (b?.ingresos ?? -1) ? r : b), null);
     const active = rows.filter((r) => r.pedidos > 0).length;
 
-    $("#daily-sub").textContent = note || "Every day in the range, including days without sales";
+    $("#daily-sub").textContent = note || "Todos los días del rango, incluso los días sin ventas";
     $("#daily-stats").innerHTML = `
-      <div><span>Revenue</span><strong>${esc(money(total))}</strong></div>
-      <div><span>Orders</span><strong>${int(orders)}</strong></div>
-      <div><span>Average per order</span><strong>${esc(money(orders ? total / orders : 0))}</strong></div>
-      <div><span>Best day</span><strong>${best && best.ingresos ? esc(dayLabel(best.fecha)) + " <small>" + esc(money(best.ingresos)) + "</small>" : "–"}</strong></div>
-      <div><span>Days with sales</span><strong>${int(active)} <small>of ${int(rows.length)}</small></strong></div>`;
+      <div><span>Ingresos</span><strong>${esc(money(total))}</strong></div>
+      <div><span>Pedidos</span><strong>${int(orders)}</strong></div>
+      <div><span>Promedio por pedido</span><strong>${esc(money(orders ? total / orders : 0))}</strong></div>
+      <div><span>Mejor día</span><strong>${best && best.ingresos ? esc(dayLabel(best.fecha)) + " <small>" + esc(money(best.ingresos)) + "</small>" : "–"}</strong></div>
+      <div><span>Días con ventas</span><strong>${int(active)} <small>de ${int(rows.length)}</small></strong></div>`;
 
     lineChart(
       $("#report-daily-chart"),
-      rows.map((r) => ({ label: dayLabel(r.fecha), tooltip: dayLabel(r.fecha, true), value: r.ingresos, detail: plural(r.pedidos, "order") })),
+      rows.map((r) => ({ label: dayLabel(r.fecha), tooltip: dayLabel(r.fecha, true), value: r.ingresos, detail: plural(r.pedidos, "pedido") })),
       { height: 260 }
     );
     $("#daily-body").innerHTML = rows.length
@@ -118,10 +118,10 @@ async function loadDailyReport() {
           .reverse()
           .map((r) => `<tr class="${r.pedidos ? "" : "is-zero"}"><td>${esc(dayLabel(r.fecha, true))}</td><td class="num">${int(r.pedidos)}</td><td class="num">${esc(money(r.ingresos))}</td></tr>`)
           .join("")
-      : emptyRow(3, "No days in this range");
+      : emptyRow(3, "No hay días en este rango");
   } catch (err) {
     showError(err);
-    $("#report-daily-chart").innerHTML = emptyBlock("Could not load daily revenue", esc(err.message));
+    $("#report-daily-chart").innerHTML = emptyBlock("No se pudieron cargar los ingresos diarios", esc(err.message));
   }
 }
 
@@ -134,7 +134,7 @@ async function loadStoresReport() {
     barList(
       $("#stores-chart"),
       rows.map((r) => ({ label: r.nombre_sucursal, value: r.ingresos })),
-      { emptyTitle: "No sales in this period", emptyHint: "Try a wider date range." }
+      { emptyTitle: "Sin ventas en este periodo", emptyHint: "Pruebe con un rango de fechas más amplio." }
     );
     setRows(
       $("#stores-report-body"),
@@ -149,11 +149,11 @@ async function loadStoresReport() {
               </tr>`
             )
             .join("") + totalRow(rows, ["pedidos", "ingresos"])
-        : emptyRow(4, "No stores yet")
+        : emptyRow(4, "Aún no hay tiendas")
     );
   } catch (err) {
     showError(err);
-    setRows($("#stores-report-body"), emptyRow(4, "Could not load this report", esc(err.message)));
+    setRows($("#stores-report-body"), emptyRow(4, "No se pudo cargar este reporte", esc(err.message)));
   }
 }
 
@@ -161,7 +161,7 @@ function totalRow(rows) {
   const orders = rows.reduce((s, r) => s + r.pedidos, 0);
   const revenue = rows.reduce((s, r) => s + r.ingresos, 0);
   return `<tr class="total-row">
-    <td>All stores</td>
+    <td>Todas las tiendas</td>
     <td class="num">${int(orders)}</td>
     <td class="num">${esc(money(revenue))}</td>
     <td class="num">${esc(money(orders ? revenue / orders : 0))}</td>
@@ -177,7 +177,7 @@ async function loadProductsReport() {
     barList(
       $("#products-chart"),
       rows.map((r) => ({ label: r.nombre, value: r.ingresos })),
-      { emptyTitle: "No products sold in this period", emptyHint: "Try a wider date range." }
+      { emptyTitle: "No se vendieron productos en este periodo", emptyHint: "Pruebe con un rango de fechas más amplio." }
     );
     setRows(
       $("#products-report-body"),
@@ -186,17 +186,17 @@ async function loadProductsReport() {
             .map(
               (r, i) => `<tr>
                 <td class="nowrap"><span class="rank">${i + 1}</span><span class="strong">${esc(r.nombre)}</span></td>
-                <td class="num nowrap">${esc(qty(r.cantidad_vendida))} <span class="muted">${esc(r.unidad_medida)}</span></td>
+                <td class="num nowrap">${esc(qty(r.cantidad_vendida))} <span class="muted">${esc(unitFor(r.cantidad_vendida, r.unidad_medida))}</span></td>
                 <td class="num">${int(r.pedidos)}</td>
                 <td class="num strong">${esc(money(r.ingresos))}</td>
               </tr>`
             )
             .join("")
-        : emptyRow(4, "No products sold in this period")
+        : emptyRow(4, "No se vendieron productos en este periodo")
     );
   } catch (err) {
     showError(err);
-    setRows($("#products-report-body"), emptyRow(4, "Could not load this report", esc(err.message)));
+    setRows($("#products-report-body"), emptyRow(4, "No se pudo cargar este reporte", esc(err.message)));
   }
 }
 
@@ -209,7 +209,7 @@ async function loadCustomersReport() {
     barList(
       $("#customers-chart"),
       rows.map((r) => ({ label: r.nombre_completo, value: r.total_gastado })),
-      { emptyTitle: "No customers bought in this period", emptyHint: "Try a wider date range." }
+      { emptyTitle: "Ningún cliente compró en este periodo", emptyHint: "Pruebe con un rango de fechas más amplio." }
     );
     setRows(
       $("#customers-report-body"),
@@ -224,11 +224,11 @@ async function loadCustomersReport() {
               </tr>`
             )
             .join("")
-        : emptyRow(4, "No customers bought in this period")
+        : emptyRow(4, "Ningún cliente compró en este periodo")
     );
   } catch (err) {
     showError(err);
-    setRows($("#customers-report-body"), emptyRow(4, "Could not load this report", esc(err.message)));
+    setRows($("#customers-report-body"), emptyRow(4, "No se pudo cargar este reporte", esc(err.message)));
   }
 }
 
@@ -236,44 +236,44 @@ async function loadCustomersReport() {
 
 const csvReports = {
   daily: {
-    name: "revenue-per-day",
+    name: "ingresos-por-dia",
     columns: [
-      { label: "Date", value: (r) => r.fecha },
-      { label: "Orders", value: (r) => r.pedidos },
-      { label: "Revenue (USD)", value: (r) => r.ingresos.toFixed(2) },
+      { label: "Fecha", value: (r) => r.fecha },
+      { label: "Pedidos", value: (r) => r.pedidos },
+      { label: "Ingresos (USD)", value: (r) => r.ingresos.toFixed(2) },
     ],
   },
   stores: {
-    name: "sales-by-store",
+    name: "ventas-por-tienda",
     columns: [
-      { label: "Store ID", value: (r) => r.tienda_id },
-      { label: "Store", value: (r) => r.nombre_sucursal },
-      { label: "Orders", value: (r) => r.pedidos },
-      { label: "Revenue (USD)", value: (r) => r.ingresos.toFixed(2) },
-      { label: "Average ticket (USD)", value: (r) => r.ticket_promedio.toFixed(2) },
+      { label: "ID tienda", value: (r) => r.tienda_id },
+      { label: "Tienda", value: (r) => r.nombre_sucursal },
+      { label: "Pedidos", value: (r) => r.pedidos },
+      { label: "Ingresos (USD)", value: (r) => r.ingresos.toFixed(2) },
+      { label: "Ticket promedio (USD)", value: (r) => r.ticket_promedio.toFixed(2) },
     ],
   },
   products: {
-    name: "best-selling-products",
+    name: "productos-mas-vendidos",
     columns: [
-      { label: "Rank", value: (r) => reportData.products.indexOf(r) + 1 },
-      { label: "Product ID", value: (r) => r.producto_id },
-      { label: "Product", value: (r) => r.nombre },
-      { label: "Unit", value: (r) => r.unidad_medida },
-      { label: "Quantity sold", value: (r) => r.cantidad_vendida },
-      { label: "Orders", value: (r) => r.pedidos },
-      { label: "Revenue (USD)", value: (r) => r.ingresos.toFixed(2) },
+      { label: "Puesto", value: (r) => reportData.products.indexOf(r) + 1 },
+      { label: "ID producto", value: (r) => r.producto_id },
+      { label: "Producto", value: (r) => r.nombre },
+      { label: "Unidad", value: (r) => r.unidad_medida },
+      { label: "Cantidad vendida", value: (r) => r.cantidad_vendida },
+      { label: "Pedidos", value: (r) => r.pedidos },
+      { label: "Ingresos (USD)", value: (r) => r.ingresos.toFixed(2) },
     ],
   },
   customers: {
-    name: "top-customers",
+    name: "mejores-clientes",
     columns: [
-      { label: "Rank", value: (r) => reportData.customers.indexOf(r) + 1 },
-      { label: "Customer ID", value: (r) => r.cliente_id },
-      { label: "Customer", value: (r) => r.nombre_completo },
-      { label: "Orders", value: (r) => r.pedidos },
-      { label: "Spent (USD)", value: (r) => r.total_gastado.toFixed(2) },
-      { label: "Eco-points held", value: (r) => r.puntos_ecologicos },
+      { label: "Puesto", value: (r) => reportData.customers.indexOf(r) + 1 },
+      { label: "ID cliente", value: (r) => r.cliente_id },
+      { label: "Cliente", value: (r) => r.nombre_completo },
+      { label: "Pedidos", value: (r) => r.pedidos },
+      { label: "Gastado (USD)", value: (r) => r.total_gastado.toFixed(2) },
+      { label: "Eco-puntos acumulados", value: (r) => r.puntos_ecologicos },
     ],
   },
 };
@@ -284,13 +284,13 @@ $("#page-reports").addEventListener("click", (e) => {
     const report = csvReports[csvBtn.dataset.csv];
     const rows = reportData[csvBtn.dataset.csv];
     if (!rows.length) {
-      toast("This report has no rows to export for the chosen dates.", "error");
+      toast("Este reporte no tiene filas para exportar en las fechas elegidas.", "error");
       return;
     }
     const { desde, hasta } = reportRange();
-    const suffix = desde || hasta ? `_${desde || "start"}_${hasta || "today"}` : "_all-time";
+    const suffix = desde || hasta ? `_${desde || "inicio"}_${hasta || "hoy"}` : "_historico";
     downloadCSV(`${report.name}${suffix}.csv`, report.columns, rows);
-    toast(`Exported ${plural(rows.length, "row")} to ${report.name}${suffix}.csv.`);
+    toast(`Se exportó ${report.name}${suffix}.csv (${plural(rows.length, "fila")}).`);
     return;
   }
 

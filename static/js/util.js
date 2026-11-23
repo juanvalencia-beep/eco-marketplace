@@ -15,33 +15,39 @@ function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (c) => map[c]);
 }
 
-const moneyFormat = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+// Everything shown on screen uses Spanish (Ecuador) formatting: $1.234,50 and "23 nov 2026, 10:30".
+// Values sent to the API and written to CSV files stay plain numbers with a dot.
+const LOCALE = "es-EC";
+const moneyFormat = new Intl.NumberFormat(LOCALE, { style: "currency", currency: "USD" });
+const qtyFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 });
+const intFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 });
+const shortFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
 
 function money(value) {
   return moneyFormat.format(Number(value) || 0);
 }
 
-// Short money for chart axes: $1.2k instead of $1,200.00
+// Short money for chart axes: $1,2k instead of $1.200,00
 function moneyShort(value) {
   const n = Number(value) || 0;
-  if (Math.abs(n) >= 1000) return "$" + (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + "k";
-  return "$" + (Number.isInteger(n) ? n : n.toFixed(2));
+  if (Math.abs(n) >= 1000) return "$" + shortFormat.format(n / 1000) + "k";
+  return "$" + qtyFormat.format(n);
 }
 
-// Quantities have up to 2 decimals (liters, kg...)
+// Quantities have up to 2 decimals (litros, kg...)
 function qty(value) {
-  return Number(value).toLocaleString("en-US", { maximumFractionDigits: 2 });
+  return qtyFormat.format(Number(value) || 0);
 }
 
 function int(value) {
-  return Math.round(Number(value) || 0).toLocaleString("en-US");
+  return intFormat.format(Math.round(Number(value) || 0));
 }
 
-// "2026-11-21T10:07:00" -> "Nov 21, 2026, 10:07 AM" (the API sends local time without a zone)
+// "2026-11-21T10:07:00" -> "21 nov 2026, 10:07" (the API sends local time without a zone)
 function dateTime(iso) {
   if (!iso) return "";
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+  return new Date(iso).toLocaleString(LOCALE, {
+    day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
   });
 }
 
@@ -54,7 +60,7 @@ function parseDay(day) {
 function dayLabel(day, withYear = false) {
   const options = { month: "short", day: "numeric" };
   if (withYear) options.year = "numeric";
-  return parseDay(day).toLocaleDateString("en-US", options);
+  return parseDay(day).toLocaleDateString(LOCALE, options);
 }
 
 // Local date as YYYY-MM-DD
@@ -69,7 +75,7 @@ function daysAgo(n) {
   return isoDay(d);
 }
 
-// Same rule as points_for() in models.py: 10 eco-points per unit, rounded down.
+// Same rule as points_for() in models.py: 10 eco-puntos per unit, rounded down.
 // Working in hundredths avoids float surprises like 0.29 * 10 = 2.9000000000000004.
 function pointsFor(quantity) {
   return Math.floor(Math.round(Number(quantity) * 100) / 10);
@@ -78,6 +84,21 @@ function pointsFor(quantity) {
 // Same rounding as the API: quantity x price, rounded to cents
 function lineSubtotal(quantity, price) {
   return Math.round(Number(quantity) * Number(price) * 100) / 100;
+}
+
+// The database stores units in plural ("litros", "unidades", "kg"). Prices read better
+// per single unit ("$2,80 por litro"), so this drops the Spanish plural ending.
+// Units it doesn't recognise as plural ("kg", "ml") are returned unchanged.
+function perUnit(unit) {
+  const u = String(unit ?? "");
+  if (/[dlnr]es$/i.test(u)) return u.slice(0, -2); // unidades -> unidad
+  if (/[aeiou]s$/i.test(u)) return u.slice(0, -1); // litros -> litro, gramos -> gramo
+  return u;
+}
+
+// Unit to show next to a quantity: "1 litro" but "2 litros"
+function unitFor(quantity, unit) {
+  return Number(quantity) === 1 ? perUnit(unit) : unit;
 }
 
 function plural(n, word, many = word + "s") {
@@ -100,7 +121,7 @@ function toast(message, type = "success") {
   const item = document.createElement("div");
   item.className = "toast toast-" + type;
   item.innerHTML = `<span class="toast-text"></span>
-    <button type="button" class="toast-close" aria-label="Dismiss message">
+    <button type="button" class="toast-close" aria-label="Cerrar mensaje">
       <svg class="icon"><use href="#i-close"/></svg>
     </button>`;
   item.querySelector(".toast-text").textContent = message;
@@ -151,7 +172,7 @@ document.addEventListener("mousedown", (e) => {
 });
 
 // Asks a yes/no question. Resolves to true when the user confirms.
-function confirmAction(text, { title = "Are you sure?", yes = "Delete" } = {}) {
+function confirmAction(text, { title = "¿Está seguro?", yes = "Eliminar" } = {}) {
   const dialog = $("#confirm-dialog");
   $("#confirm-title").textContent = title;
   $("#confirm-text").textContent = text;
