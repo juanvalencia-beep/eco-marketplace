@@ -34,12 +34,14 @@ def conn(db_path):
 
 @pytest.fixture
 def base_conn(conn):
-    """Database with customer 1, store 1 and product 1 from the test plan."""
+    """Database with the common test data: customer 1, store 1, products 1 and 2."""
     conn.execute("INSERT INTO cliente (nombre_completo, correo_electronico) "
                  "VALUES ('Ana Pérez', 'ana.perez@example.com')")
     conn.execute("INSERT INTO tienda (nombre_sucursal, direccion) "
                  "VALUES ('Sucursal Centro', 'Av. Amazonas N24-03')")
-    conn.execute("INSERT INTO producto (nombre, unidad_medida) VALUES ('Detergente líquido', 'liters')")
+    conn.execute("INSERT INTO producto (nombre, unidad_medida, precio_unitario) "
+                 "VALUES ('Detergente líquido', 'liters', 2.80)")
+    conn.execute("INSERT INTO producto (nombre, unidad_medida, precio_unitario) VALUES ('Avena', 'kg', 3.20)")
     conn.commit()
     return conn
 

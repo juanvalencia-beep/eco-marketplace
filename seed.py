@@ -12,14 +12,14 @@ TIENDAS = [
 
 # (name, unit, price per unit in USD)
 PRODUCTOS = [
-    ('Detergente líquido', 'liters', '2.80'),
+    ('Detergente líquido', 'litros', '2.80'),
     ('Avena', 'kg', '3.20'),
     ('Arroz integral', 'kg', '2.10'),
-    ('Jabón de manos', 'liters', '4.50'),
-    ('Shampoo sólido', 'units', '6.90'),
-    ('Aceite de girasol', 'liters', '3.60'),
+    ('Jabón de manos', 'litros', '4.50'),
+    ('Shampoo sólido', 'unidades', '6.90'),
+    ('Aceite de girasol', 'litros', '3.60'),
     ('Granola', 'kg', '7.40'),
-    ('Suavizante de ropa', 'liters', '2.40'),
+    ('Suavizante de ropa', 'litros', '2.40'),
 ]
 
 CLIENTES = [
@@ -104,7 +104,7 @@ def seed():
             stock[(tienda_id, producto_id)] -= cantidad
             assert stock[(tienda_id, producto_id)] >= 0, (tienda_id, producto_id)
             puntos[cliente_id] += points_for(cantidad)
-            pedido.detalles.append(DetallePedido(producto_id=producto_id, cantidad=cantidad,
+            pedido.detalles.append(DetallePedido(producto_id=producto_id, cantidad_comprada=cantidad,
                                                  precio_unitario=precios[producto_id]))
         db.session.add(pedido)
 

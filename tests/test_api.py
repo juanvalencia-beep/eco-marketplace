@@ -2,7 +2,7 @@ def order(client, cantidad=None, cliente_id=1, tienda_id=1, producto_id=1, lines
     """Creates an order. Either one product (cantidad/producto_id) or several: lines=[(producto_id, cantidad)]."""
     lines = lines if lines is not None else [(producto_id, cantidad)]
     body = {'cliente_id': cliente_id, 'tienda_id': tienda_id,
-            'detalles': [{'producto_id': p, 'cantidad': c} for p, c in lines], **extra}
+            'detalles': [{'producto_id': p, 'cantidad_comprada': c} for p, c in lines], **extra}
     return client.post('/api/pedidos', json=body)
 
 
@@ -58,7 +58,7 @@ def test_create_cliente_duplicate_email(client):
     res = client.post('/api/clientes', json={'nombre_completo': 'Otra Ana',
                                              'correo_electronico': 'ana.perez@example.com'})
     assert res.status_code == 409
-    assert 'email' in res.get_json()['error']
+    assert 'correo' in res.get_json()['error']
 
 
 def test_update_cliente(client):
@@ -85,7 +85,7 @@ def test_cliente_not_found(client):
     assert client.put('/api/clientes/999', json={'nombre_completo': 'X'}).status_code == 404
     res = client.delete('/api/clientes/999')
     assert res.status_code == 404
-    assert res.get_json() == {'error': 'Customer 999 not found'}
+    assert res.get_json() == {'error': 'No existe el cliente 999'}
 
 
 def test_delete_cliente(client):
@@ -210,7 +210,7 @@ def test_create_pedido_updates_stock_and_points(client):
     assert data['nombre_completo'] == 'Ana Pérez'
     assert data['detalles'] == [{'pedido_id': data['pedido_id'], 'producto_id': 1,
                                  'nombre_producto': 'Detergente líquido', 'unidad_medida': 'liters',
-                                 'cantidad': 2.5, 'precio_unitario': 2.8, 'subtotal': 7.0, 'puntos': 25}]
+                                 'cantidad_comprada': 2.5, 'precio_unitario': 2.8, 'subtotal': 7.0, 'puntos': 25}]
     assert stock(client) == 97.5
     assert points(client) == 25
 
@@ -311,7 +311,7 @@ def test_create_pedido_with_several_lines(client):
     assert res.status_code == 201
     data = res.get_json()
     assert data['num_productos'] == 2
-    assert [(d['producto_id'], d['cantidad'], d['subtotal']) for d in data['detalles']] == [(1, 2.5, 7.0), (2, 1.25, 4.0)]
+    assert [(d['producto_id'], d['cantidad_comprada'], d['subtotal']) for d in data['detalles']] == [(1, 2.5, 7.0), (2, 1.25, 4.0)]
     assert data['total'] == 11.0
     assert data['puntos_ganados'] == 37  # 25 + 12
     assert stock(client, 1, 1) == 97.5
@@ -347,13 +347,13 @@ def test_detalles_crud(client):
     pedido_id = order(client, 2).get_json()['pedido_id']
 
     # add a line
-    res = client.post(f'/api/pedidos/{pedido_id}/detalles', json={'producto_id': 2, 'cantidad': 1.5})
+    res = client.post(f'/api/pedidos/{pedido_id}/detalles', json={'producto_id': 2, 'cantidad_comprada': 1.5})
     assert res.status_code == 201
     assert res.get_json()['subtotal'] == 4.8
     assert stock(client, 1, 2) == 3.5
     assert points(client) == 35
     assert client.post(f'/api/pedidos/{pedido_id}/detalles',
-                       json={'producto_id': 2, 'cantidad': 1}).status_code == 409
+                       json={'producto_id': 2, 'cantidad_comprada': 1}).status_code == 409
 
     # read
     lines = client.get(f'/api/pedidos/{pedido_id}/detalles').get_json()
@@ -361,15 +361,15 @@ def test_detalles_crud(client):
     assert client.get(f'/api/pedidos/{pedido_id}').get_json()['total'] == 10.4
 
     # update: more quantity takes stock, less gives it back
-    res = client.put(f'/api/pedidos/{pedido_id}/detalles/1', json={'cantidad': 5})
+    res = client.put(f'/api/pedidos/{pedido_id}/detalles/1', json={'cantidad_comprada': 5})
     assert res.status_code == 200
     assert stock(client, 1, 1) == 95.0
     assert points(client) == 65
-    client.put(f'/api/pedidos/{pedido_id}/detalles/1', json={'cantidad': 1})
+    client.put(f'/api/pedidos/{pedido_id}/detalles/1', json={'cantidad_comprada': 1})
     assert stock(client, 1, 1) == 99.0
     assert points(client) == 25
-    assert client.put(f'/api/pedidos/{pedido_id}/detalles/1', json={'cantidad': 0}).status_code == 400
-    assert client.put(f'/api/pedidos/{pedido_id}/detalles/1', json={'cantidad': 500}).status_code == 409
+    assert client.put(f'/api/pedidos/{pedido_id}/detalles/1', json={'cantidad_comprada': 0}).status_code == 400
+    assert client.put(f'/api/pedidos/{pedido_id}/detalles/1', json={'cantidad_comprada': 500}).status_code == 409
     assert stock(client, 1, 1) == 99.0
 
     # delete a line
@@ -385,8 +385,8 @@ def test_detalles_not_found(client):
     assert client.get('/api/pedidos/99/detalles').status_code == 404
     pedido_id = order(client, 1).get_json()['pedido_id']
     assert client.get(f'/api/pedidos/{pedido_id}/detalles/2').status_code == 404
-    assert client.put(f'/api/pedidos/{pedido_id}/detalles/2', json={'cantidad': 1}).status_code == 404
-    assert client.post(f'/api/pedidos/{pedido_id}/detalles', json={'producto_id': 99, 'cantidad': 1}).status_code == 404
+    assert client.put(f'/api/pedidos/{pedido_id}/detalles/2', json={'cantidad_comprada': 1}).status_code == 404
+    assert client.post(f'/api/pedidos/{pedido_id}/detalles', json={'producto_id': 99, 'cantidad_comprada': 1}).status_code == 404
 
 
 def test_cancel_pedido_with_several_lines(client):
@@ -505,3 +505,8 @@ def test_create_producto_requires_price(client):
     res = client.post('/api/productos', json={'nombre': 'Granola', 'unidad_medida': 'kg'})
     assert res.status_code == 400
     assert 'precio_unitario' in res.get_json()['error']
+
+
+def test_unknown_route_message_in_spanish(client):
+    assert client.get('/api/nothing-here').get_json() == {'error': 'Ruta no encontrada'}
+    assert client.delete('/api/clientes').get_json() == {'error': 'Método no permitido para esta ruta'}

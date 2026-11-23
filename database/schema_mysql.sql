@@ -66,18 +66,19 @@ CREATE TABLE pedido (
 
 -- Order lines (detalle de pedido): one row per product of an order.
 -- precio_unitario is copied from producto when the order is made, so a later
--- price change does not rewrite old orders. Deleting an order deletes its lines.
+-- price change does not rewrite old orders. All foreign keys are ON DELETE RESTRICT:
+-- to cancel an order its lines are deleted first, in the same transaction.
 CREATE TABLE detalle_pedido (
-    pedido_id        INT            NOT NULL,
-    producto_id      INT            NOT NULL,
-    cantidad         DECIMAL(10,2)  NOT NULL,
-    precio_unitario  DECIMAL(10,2)  NOT NULL,
+    pedido_id         INT            NOT NULL,
+    producto_id       INT            NOT NULL,
+    cantidad_comprada DECIMAL(10,2)  NOT NULL,
+    precio_unitario   DECIMAL(10,2)  NOT NULL,
     CONSTRAINT pk_detalle_pedido PRIMARY KEY (pedido_id, producto_id),
     CONSTRAINT fk_detalle_pedido_pedido FOREIGN KEY (pedido_id)
-        REFERENCES pedido (pedido_id) ON DELETE CASCADE,
+        REFERENCES pedido (pedido_id) ON DELETE RESTRICT,
     CONSTRAINT fk_detalle_pedido_producto FOREIGN KEY (producto_id)
         REFERENCES producto (producto_id) ON DELETE RESTRICT,
-    CONSTRAINT ck_detalle_pedido_cantidad_positiva CHECK (cantidad > 0),
+    CONSTRAINT ck_detalle_pedido_cantidad_comprada_positiva CHECK (cantidad_comprada > 0),
     CONSTRAINT ck_detalle_pedido_precio_unitario_no_negativo CHECK (precio_unitario >= 0)
 ) ENGINE = InnoDB;
 

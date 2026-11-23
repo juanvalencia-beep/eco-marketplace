@@ -78,10 +78,10 @@ SCHEMAS = {
                       nombre_producto=STR, unidad_medida=STR),
     'InventarioInput': obj(['tienda_id', 'producto_id', 'cantidad_stock'], tienda_id=INT, producto_id=INT,
                            cantidad_stock=NUM),
-    'Detalle': obj(pedido_id=INT, producto_id=INT, nombre_producto=STR, unidad_medida=STR, cantidad=NUM,
+    'Detalle': obj(pedido_id=INT, producto_id=INT, nombre_producto=STR, unidad_medida=STR, cantidad_comprada=NUM,
                    precio_unitario=NUM, subtotal=NUM, puntos=INT),
-    'DetalleInput': obj(['producto_id', 'cantidad'], producto_id=INT,
-                        cantidad={'type': 'number', 'minimum': 0.01, 'maximum': 10000}),
+    'DetalleInput': obj(['producto_id', 'cantidad_comprada'], producto_id=INT,
+                        cantidad_comprada={'type': 'number', 'minimum': 0.01, 'maximum': 10000}),
     'Pedido': obj(pedido_id=INT, fecha_exacta={'type': 'string', 'format': 'date-time'}, cliente_id=INT,
                   tienda_id=INT, nombre_completo=STR, nombre_sucursal=STR, num_productos=INT,
                   cantidad_total=NUM, total=NUM, puntos_ganados=INT, detalles=array('Detalle')),
@@ -165,7 +165,7 @@ PATHS = {
         'post': op('Pedidos', 'Register an order with one or more products',
                    {**ok(ref('Pedido'), '201', 'Created'), **errors('400', '404', '409')},
                    request=body(ref('PedidoInput'), {'cliente_id': 1, 'tienda_id': 1, 'detalles': [
-                       {'producto_id': 1, 'cantidad': 2.5}, {'producto_id': 2, 'cantidad': 1}]}),
+                       {'producto_id': 1, 'cantidad_comprada': 2.5}, {'producto_id': 2, 'cantidad_comprada': 1}]}),
                    description='One transaction: saves the header and the lines, subtracts the stock of every '
                                'line and adds 10 eco-points per unit. If one line has no stock nothing is saved. '
                                'The price of each line is taken from the product, not from the request.'),
@@ -187,7 +187,7 @@ PATHS = {
         'get': op('Detalle de pedido', 'Get one line', {**ok(ref('Detalle')), **errors('404')}, [O, P]),
         'put': op('Detalle de pedido', 'Change the quantity of a line (stock and points are adjusted)',
                   {**ok(ref('Detalle')), **errors('400', '404', '409')}, [O, P],
-                  body(obj(['cantidad'], cantidad=NUM))),
+                  body(obj(['cantidad_comprada'], cantidad_comprada=NUM))),
         'delete': op('Detalle de pedido', 'Remove a line (409 if it is the last one)',
                      {**MESSAGE, **errors('404', '409')}, [O, P]),
     },

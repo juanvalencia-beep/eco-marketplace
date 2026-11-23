@@ -28,14 +28,14 @@ def enable_sqlite_foreign_keys(dbapi_connection, connection_record):
 def integrity_message(error):
     text = str(error.orig)
     if 'correo_electronico' in text:
-        return 'A customer with that email already exists'
+        return 'Ya existe un cliente con ese correo electrónico'
     if 'inventario' in text and ('UNIQUE' in text or 'Duplicate' in text or 'PRIMARY' in text):
-        return 'That store already has an inventory row for that product'
+        return 'Esa tienda ya tiene inventario de ese producto'
     if 'cantidad_stock' in text:
-        return 'Not enough stock for this operation'
+        return 'No hay suficiente stock para esta operación'
     if 'FOREIGN KEY' in text or 'foreign key' in text:
-        return 'The record is referenced by other records or references a missing one'
-    return 'The operation breaks a database constraint'
+        return 'El registro está relacionado con otros registros o hace referencia a uno que no existe'
+    return 'La operación viola una restricción de la base de datos'
 
 
 def create_app(database_url=None):
@@ -66,9 +66,15 @@ def create_app(database_url=None):
     def api_docs():
         return SWAGGER_HTML
 
+    # Werkzeug's own messages (unknown route, wrong method...) are in English
+    DEFAULT_ERRORS = {404: 'Ruta no encontrada', 405: 'Método no permitido para esta ruta'}
+
     @app.errorhandler(HTTPException)
     def http_error(error):
-        return jsonify({'error': error.description}), error.code
+        message = error.description
+        if message == type(error).description:  # not a message of ours
+            message = DEFAULT_ERRORS.get(error.code, message)
+        return jsonify({'error': message}), error.code
 
     @app.errorhandler(IntegrityError)
     def integrity_error(error):

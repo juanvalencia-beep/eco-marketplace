@@ -1,3 +1,6 @@
+"""Test cases TC-01 to TC-15 of the Database Design Specification (Nov 16, 2026),
+run directly on database/schema_sqlite.sql. Common test data: customer 1 (Ana Pérez),
+store 1 (Sucursal Centro), product 1 (Detergente líquido, liters) and product 2 (Avena, kg)."""
 import sqlite3
 import threading
 import time
@@ -13,17 +16,22 @@ def stock(conn, tienda_id=1, producto_id=1):
     return row[0] if row else None
 
 
-def add_order(conn, cliente_id, cantidad, fecha='2026-11-16 10:30:00', tienda_id=1, producto_id=1, precio=2.80):
-    """Inserts an order header and one order line (detalle_pedido)."""
+def add_header(conn, cliente_id, fecha='2026-11-16 10:30:00', tienda_id=1):
+    """Inserts an order header (pedido) and returns its id."""
     cur = conn.execute('INSERT INTO pedido (fecha_exacta, cliente_id, tienda_id) VALUES (?, ?, ?)',
                        (fecha, cliente_id, tienda_id))
-    add_line(conn, cur.lastrowid, producto_id, cantidad, precio)
     return cur.lastrowid
 
 
 def add_line(conn, pedido_id, producto_id, cantidad, precio=2.80):
-    conn.execute('INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, precio_unitario) '
+    """Inserts one order line (detalle_pedido)."""
+    conn.execute('INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad_comprada, precio_unitario) '
                  'VALUES (?, ?, ?, ?)', (pedido_id, producto_id, cantidad, precio))
+
+
+def subtract_stock(conn, tienda_id, producto_id, cantidad):
+    conn.execute('UPDATE inventario SET cantidad_stock = cantidad_stock - ? '
+                 'WHERE tienda_id = ? AND producto_id = ?', (cantidad, tienda_id, producto_id))
 
 
 def test_tc01_register_customer(conn):
@@ -103,97 +111,117 @@ def test_tc04_duplicate_inventory_rejected(base_conn):
     assert base_conn.execute('SELECT COUNT(*) FROM inventario').fetchone()[0] == 1
 
 
-def test_tc05_register_order(base_conn):
-    """FR-03: a valid order gets a unique id; the header and its line keep the linked values."""
-    pedido_id = add_order(base_conn, 1, 2.50)
+def test_tc05_register_order_with_two_products(base_conn):
+    """FR-03: one order (header) with two detail lines linked to it."""
+    cur = base_conn.execute("INSERT INTO pedido (fecha_exacta, cliente_id, tienda_id) "
+                            "VALUES (datetime('now'), 1, 1)")
+    pedido_id = cur.lastrowid
+    add_line(base_conn, pedido_id, 1, 2.50)
+    add_line(base_conn, pedido_id, 2, 1.00)
     base_conn.commit()
 
-    header = base_conn.execute('SELECT fecha_exacta, cliente_id, tienda_id FROM pedido WHERE pedido_id = ?',
-                               (pedido_id,)).fetchone()
-    line = base_conn.execute('SELECT producto_id, cantidad, precio_unitario FROM detalle_pedido '
-                             'WHERE pedido_id = ?', (pedido_id,)).fetchone()
-    assert pedido_id == 1
-    assert header == ('2026-11-16 10:30:00', 1, 1)
-    assert line == (1, 2.50, 2.80)
+    rows = base_conn.execute(
+        'SELECT p.pedido_id, p.cliente_id, p.tienda_id, d.producto_id, d.cantidad_comprada '
+        'FROM pedido p JOIN detalle_pedido d ON d.pedido_id = p.pedido_id '
+        'WHERE p.pedido_id = ? ORDER BY d.producto_id', (pedido_id,)).fetchall()
+    assert base_conn.execute('SELECT COUNT(*) FROM pedido').fetchone()[0] == 1
+    assert rows == [(pedido_id, 1, 1, 1, 2.50), (pedido_id, 1, 1, 2, 1.00)]
 
 
 def test_tc06_order_with_missing_customer(base_conn):
-    """FR-03: an order for customer 9999 is rejected by the foreign key."""
+    """FR-03: an order for customer 9999 is rejected by fk_pedido_cliente."""
     with pytest.raises(sqlite3.IntegrityError, match='FOREIGN KEY'):
-        add_order(base_conn, 9999, 2.50)
+        base_conn.execute("INSERT INTO pedido (fecha_exacta, cliente_id, tienda_id) "
+                          "VALUES ('2026-11-16 10:30:00', 9999, 1)")
     base_conn.rollback()
 
     assert base_conn.execute('SELECT COUNT(*) FROM pedido').fetchone()[0] == 0
 
 
-@pytest.mark.parametrize('cantidad', [0, -1.00])
-def test_tc07_order_quantity_must_be_positive(base_conn, cantidad):
-    """FR-03: the CHECK constraint of detalle_pedido rejects quantities of 0 and -1.00."""
-    with pytest.raises(sqlite3.IntegrityError, match='ck_detalle_pedido_cantidad_positiva'):
-        add_order(base_conn, 1, cantidad)
-    base_conn.rollback()
+def test_tc07_detail_quantity_must_be_positive(base_conn):
+    """FR-03: ck_detalle_pedido_cantidad_comprada_positiva rejects 0 and -1.00."""
+    pedido_id = add_header(base_conn, 1)
+    base_conn.commit()
 
-    assert base_conn.execute('SELECT COUNT(*) FROM pedido').fetchone()[0] == 0
+    for cantidad in (0, -1.00):
+        with pytest.raises(sqlite3.IntegrityError, match='ck_detalle_pedido_cantidad_comprada_positiva'):
+            add_line(base_conn, pedido_id, 1, cantidad)
+        base_conn.rollback()
+
     assert base_conn.execute('SELECT COUNT(*) FROM detalle_pedido').fetchone()[0] == 0
 
 
 def test_tc08_customer_order_history(base_conn):
-    """FR-04: the history of customer 1 has only their 3 orders, newest first."""
+    """FR-04: customer 1 has 3 orders (one with two products) -> 4 detail lines, newest first."""
     base_conn.execute("INSERT INTO cliente (nombre_completo, correo_electronico) "
                       "VALUES ('Carlos Andrade', 'carlos.andrade@example.com')")
-    add_order(base_conn, 1, 1.00, '2026-11-01 09:00:00')
-    add_order(base_conn, 1, 2.00, '2026-11-10 12:00:00')
-    add_order(base_conn, 2, 4.00, '2026-11-12 08:00:00')
-    add_order(base_conn, 1, 3.00, '2026-11-05 18:30:00')
+    p1 = add_header(base_conn, 1, '2026-11-01 09:00:00')
+    add_line(base_conn, p1, 1, 1.00)
+    p2 = add_header(base_conn, 1, '2026-11-10 12:00:00')
+    add_line(base_conn, p2, 1, 2.00)
+    add_line(base_conn, p2, 2, 0.50)
+    p3 = add_header(base_conn, 2, '2026-11-12 08:00:00')
+    add_line(base_conn, p3, 1, 4.00)
+    p4 = add_header(base_conn, 1, '2026-11-05 18:30:00')
+    add_line(base_conn, p4, 2, 3.00)
     base_conn.commit()
 
     rows = base_conn.execute(
-        'SELECT p.pedido_id, p.fecha_exacta, pr.nombre, t.nombre_sucursal, d.cantidad '
+        'SELECT p.pedido_id, p.fecha_exacta, t.nombre_sucursal, pr.nombre, d.cantidad_comprada '
         'FROM pedido p '
         'JOIN detalle_pedido d ON d.pedido_id = p.pedido_id '
         'JOIN producto pr ON pr.producto_id = d.producto_id '
         'JOIN tienda t ON t.tienda_id = p.tienda_id '
         'WHERE p.cliente_id = ? '
-        'ORDER BY p.fecha_exacta DESC', (1,)).fetchall()
+        'ORDER BY p.fecha_exacta DESC, d.producto_id', (1,)).fetchall()
 
-    assert len(rows) == 3
-    assert [r[1] for r in rows] == ['2026-11-10 12:00:00', '2026-11-05 18:30:00', '2026-11-01 09:00:00']
-    assert rows[0][2:4] == ('Detergente líquido', 'Sucursal Centro')
+    assert len(rows) == 4
+    assert {r[0] for r in rows} == {p1, p2, p4}
+    assert [r[1] for r in rows] == ['2026-11-10 12:00:00', '2026-11-10 12:00:00',
+                                    '2026-11-05 18:30:00', '2026-11-01 09:00:00']
+    assert rows[0][2:] == ('Sucursal Centro', 'Detergente líquido', 2.00)
 
 
-def test_tc09_order_updates_stock(base_conn):
-    """FR-05: saving the order and subtracting the stock in one transaction leaves 97.50."""
+def test_tc09_order_with_two_products_updates_stock(base_conn):
+    """FR-05: saving the order with two lines and subtracting both stocks in one transaction."""
     base_conn.execute('INSERT INTO inventario VALUES (1, 1, 100.00)')
+    base_conn.execute('INSERT INTO inventario VALUES (1, 2, 50.00)')
     base_conn.commit()
 
     with base_conn:
-        add_order(base_conn, 1, 2.50)
-        base_conn.execute('UPDATE inventario SET cantidad_stock = cantidad_stock - 2.50 '
-                          'WHERE tienda_id = 1 AND producto_id = 1')
+        pedido_id = add_header(base_conn, 1)
+        for producto_id, cantidad in ((1, 2.50), (2, 1.00)):
+            add_line(base_conn, pedido_id, producto_id, cantidad)
+            subtract_stock(base_conn, 1, producto_id, cantidad)
 
-    assert stock(base_conn) == pytest.approx(97.50)
     assert base_conn.execute('SELECT COUNT(*) FROM pedido').fetchone()[0] == 1
+    assert base_conn.execute('SELECT COUNT(*) FROM detalle_pedido WHERE pedido_id = ?',
+                             (pedido_id,)).fetchone()[0] == 2
+    assert stock(base_conn, 1, 1) == pytest.approx(97.50)
+    assert stock(base_conn, 1, 2) == pytest.approx(49.00)
 
 
-def test_tc10_order_without_enough_stock_rolls_back(base_conn):
-    """FR-05: an order of 500 with only 97.50 in stock is rolled back completely."""
+def test_tc10_one_product_without_stock_rolls_back_the_whole_order(base_conn):
+    """FR-05: product 2 has not enough stock, so the order, its lines and both stocks are rolled back."""
     base_conn.execute('INSERT INTO inventario VALUES (1, 1, 97.50)')
+    base_conn.execute('INSERT INTO inventario VALUES (1, 2, 49.00)')
     base_conn.commit()
 
     with pytest.raises(sqlite3.IntegrityError, match='ck_inventario_cantidad_stock_no_negativa'):
         with base_conn:
-            add_order(base_conn, 1, 500)
-            base_conn.execute('UPDATE inventario SET cantidad_stock = cantidad_stock - 500 '
-                              'WHERE tienda_id = 1 AND producto_id = 1')
+            pedido_id = add_header(base_conn, 1)
+            for producto_id, cantidad in ((1, 1.00), (2, 500.00)):
+                add_line(base_conn, pedido_id, producto_id, cantidad)
+                subtract_stock(base_conn, 1, producto_id, cantidad)
 
     assert base_conn.execute('SELECT COUNT(*) FROM pedido').fetchone()[0] == 0
     assert base_conn.execute('SELECT COUNT(*) FROM detalle_pedido').fetchone()[0] == 0
-    assert stock(base_conn) == pytest.approx(97.50)
+    assert stock(base_conn, 1, 1) == pytest.approx(97.50)
+    assert stock(base_conn, 1, 2) == pytest.approx(49.00)
 
 
 def test_tc11_low_stock_report(base_conn):
     """FR-06: only the row with stock under 10.00 shows up in the low stock report."""
-    base_conn.execute("INSERT INTO producto (nombre, unidad_medida) VALUES ('Avena', 'kg')")
     base_conn.execute('INSERT INTO inventario VALUES (1, 1, 5.00)')
     base_conn.execute('INSERT INTO inventario VALUES (1, 2, 80.00)')
     base_conn.commit()
@@ -209,7 +237,7 @@ def test_tc11_low_stock_report(base_conn):
 
 
 def test_tc12_duplicate_email_rejected(base_conn):
-    """NFR-02: a second customer with the same email is rejected by the unique constraint."""
+    """NFR-02: a second customer with the same email is rejected by uq_cliente_correo_electronico."""
     with pytest.raises(sqlite3.IntegrityError, match='UNIQUE'):
         base_conn.execute('INSERT INTO cliente (nombre_completo, correo_electronico) VALUES (?, ?)',
                           ('Ana P. Duplicada', ANA[1]))
@@ -243,63 +271,83 @@ def test_tc13_schema_script_creates_everything(conn):
     assert fks['inventario'] == {('tienda_id', 'tienda'), ('producto_id', 'producto')}
     assert fks['pedido'] == {('cliente_id', 'cliente'), ('tienda_id', 'tienda')}
     assert fks['detalle_pedido'] == {('pedido_id', 'pedido'), ('producto_id', 'producto')}
-    for row in conn.execute('PRAGMA foreign_key_list(pedido)'):
-        assert row[6] == 'RESTRICT'
-    on_delete = {row[3]: row[6] for row in conn.execute('PRAGMA foreign_key_list(detalle_pedido)')}
-    assert on_delete == {'pedido_id': 'CASCADE', 'producto_id': 'RESTRICT'}
+    # all foreign keys are ON DELETE RESTRICT (Annex B)
+    for table in ('inventario', 'pedido', 'detalle_pedido'):
+        for row in conn.execute(f'PRAGMA foreign_key_list({table})'):
+            assert row[6] == 'RESTRICT'
 
     assert 'uq_cliente_correo_electronico' in tables['cliente']
     assert 'ck_cliente_puntos_ecologicos_no_negativo' in tables['cliente']
     assert 'ck_inventario_cantidad_stock_no_negativa' in tables['inventario']
-    assert 'ck_producto_precio_unitario_no_negativo' in tables['producto']
-    assert 'ck_detalle_pedido_cantidad_positiva' in tables['detalle_pedido']
-    assert 'ck_detalle_pedido_precio_unitario_no_negativo' in tables['detalle_pedido']
+    assert 'ck_detalle_pedido_cantidad_comprada_positiva' in tables['detalle_pedido']
     for name in ('fk_inventario_tienda', 'fk_inventario_producto'):
         assert name in tables['inventario']
     for name in ('fk_pedido_cliente', 'fk_pedido_tienda'):
         assert name in tables['pedido']
-    for name in ('pk_detalle_pedido', 'fk_detalle_pedido_pedido', 'fk_detalle_pedido_producto'):
+    for name in ('fk_detalle_pedido_pedido', 'fk_detalle_pedido_producto'):
         assert name in tables['detalle_pedido']
 
     indexes = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'index'")}
-    assert {'idx_pedido_cliente_id', 'idx_pedido_tienda_id', 'idx_pedido_fecha_exacta',
-            'idx_detalle_pedido_producto_id'} <= indexes
+    assert {'idx_pedido_cliente_id', 'idx_pedido_tienda_id', 'idx_detalle_pedido_producto_id'} <= indexes
     assert conn.execute('PRAGMA foreign_keys').fetchone()[0] == 1
 
 
-def test_tc14_order_with_several_lines_and_total(base_conn):
-    """FR-03: one order holds several products (detalle_pedido) and its total is the sum of the lines."""
-    base_conn.execute("INSERT INTO producto (nombre, unidad_medida, precio_unitario) VALUES ('Avena', 'kg', 3.20)")
-    pedido_id = add_order(base_conn, 1, 2.50)                    # 2.50 x 2.80 = 7.00
-    add_line(base_conn, pedido_id, 2, 1.25, 3.20)                # 1.25 x 3.20 = 4.00
+def test_tc14_same_product_twice_in_an_order_rejected(base_conn):
+    """FR-03: pk_detalle_pedido allows only one line per product in each order."""
+    pedido_id = add_header(base_conn, 1)
+    add_line(base_conn, pedido_id, 1, 2.50)
     base_conn.commit()
 
-    row = base_conn.execute('SELECT COUNT(*), ROUND(SUM(cantidad * precio_unitario), 2) '
-                            'FROM detalle_pedido WHERE pedido_id = ?', (pedido_id,)).fetchone()
-    assert row == (2, 11.00)
-
-
-def test_tc15_same_product_twice_in_an_order_rejected(base_conn):
-    """The composite key (pedido_id, producto_id) allows one line per product in each order."""
-    pedido_id = add_order(base_conn, 1, 2.50)
     with pytest.raises(sqlite3.IntegrityError, match='UNIQUE'):
         add_line(base_conn, pedido_id, 1, 1.00)
     base_conn.rollback()
 
+    assert base_conn.execute('SELECT COUNT(*) FROM detalle_pedido WHERE pedido_id = ?',
+                             (pedido_id,)).fetchone()[0] == 1
 
-def test_tc16_deleting_an_order_deletes_its_lines(base_conn):
-    """ON DELETE CASCADE: the lines belong to the order, so cancelling it removes them too."""
-    pedido_id = add_order(base_conn, 1, 2.50)
+
+def test_tc15_detail_line_referential_integrity(base_conn):
+    """FR-03: a line for order 9999 or for product 9999 is rejected by the foreign keys."""
+    pedido_id = add_header(base_conn, 1)
     base_conn.commit()
-    base_conn.execute('DELETE FROM pedido WHERE pedido_id = ?', (pedido_id,))
-    base_conn.commit()
+
+    with pytest.raises(sqlite3.IntegrityError, match='FOREIGN KEY'):
+        add_line(base_conn, 9999, 1, 1.00)      # fk_detalle_pedido_pedido
+    base_conn.rollback()
+    with pytest.raises(sqlite3.IntegrityError, match='FOREIGN KEY'):
+        add_line(base_conn, pedido_id, 9999, 1.00)  # fk_detalle_pedido_producto
+    base_conn.rollback()
+
     assert base_conn.execute('SELECT COUNT(*) FROM detalle_pedido').fetchone()[0] == 0
 
 
-def test_tc17_product_with_order_lines_cannot_be_deleted(base_conn):
-    """ON DELETE RESTRICT: a product that appears in an order keeps the sales history."""
-    add_order(base_conn, 1, 2.50)
+# ---- extra checks, not in the design document ----
+
+def test_extra_order_total_is_the_sum_of_its_lines(base_conn):
+    """The price is copied into each line, so the order total is SUM(cantidad_comprada * precio_unitario)."""
+    pedido_id = add_header(base_conn, 1)
+    add_line(base_conn, pedido_id, 1, 2.50, 2.80)   # 7.00
+    add_line(base_conn, pedido_id, 2, 1.25, 3.20)   # 4.00
     base_conn.commit()
-    with pytest.raises(sqlite3.IntegrityError, match='FOREIGN KEY'):
-        base_conn.execute('DELETE FROM producto WHERE producto_id = 1')
-    base_conn.rollback()
+
+    row = base_conn.execute('SELECT COUNT(*), ROUND(SUM(cantidad_comprada * precio_unitario), 2) '
+                            'FROM detalle_pedido WHERE pedido_id = ?', (pedido_id,)).fetchone()
+    assert row == (2, 11.00)
+
+
+def test_extra_restrict_protects_orders_and_products_with_lines(base_conn):
+    """ON DELETE RESTRICT: an order with lines, or a product that was sold, can't be deleted."""
+    pedido_id = add_header(base_conn, 1)
+    add_line(base_conn, pedido_id, 1, 2.50)
+    base_conn.commit()
+
+    for sql in ('DELETE FROM pedido WHERE pedido_id = 1', 'DELETE FROM producto WHERE producto_id = 1'):
+        with pytest.raises(sqlite3.IntegrityError, match='FOREIGN KEY'):
+            base_conn.execute(sql)
+        base_conn.rollback()
+
+    # cancelling an order = delete its lines first, then the header, in one transaction
+    with base_conn:
+        base_conn.execute('DELETE FROM detalle_pedido WHERE pedido_id = ?', (pedido_id,))
+        base_conn.execute('DELETE FROM pedido WHERE pedido_id = ?', (pedido_id,))
+    assert base_conn.execute('SELECT COUNT(*) FROM pedido').fetchone()[0] == 0

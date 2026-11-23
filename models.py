@@ -130,8 +130,9 @@ class Pedido(db.Model):
 
     cliente = db.relationship('Cliente')
     tienda = db.relationship('Tienda')
+    # The FK is ON DELETE RESTRICT, so the ORM deletes the lines before the header
     detalles = db.relationship('DetallePedido', back_populates='pedido', cascade='all, delete-orphan',
-                               passive_deletes=True, order_by='DetallePedido.producto_id')
+                               order_by='DetallePedido.producto_id')
 
     @property
     def total(self):
@@ -139,7 +140,7 @@ class Pedido(db.Model):
 
     @property
     def cantidad_total(self):
-        return sum((d.cantidad for d in self.detalles), Decimal('0'))
+        return sum((d.cantidad_comprada for d in self.detalles), Decimal('0'))
 
     def to_dict(self, with_detalles=True):
         data = {
@@ -165,15 +166,15 @@ class DetallePedido(db.Model):
     __tablename__ = 'detalle_pedido'
 
     pedido_id = db.Column(db.Integer, db.ForeignKey('pedido.pedido_id', name='fk_detalle_pedido_pedido',
-                                                    ondelete='CASCADE'), nullable=False)
+                                                    ondelete='RESTRICT'), nullable=False)
     producto_id = db.Column(db.Integer, db.ForeignKey('producto.producto_id', name='fk_detalle_pedido_producto',
                                                       ondelete='RESTRICT'), nullable=False)
-    cantidad = db.Column(db.Numeric(10, 2), nullable=False)
+    cantidad_comprada = db.Column(db.Numeric(10, 2), nullable=False)
     precio_unitario = db.Column(db.Numeric(10, 2), nullable=False)
 
     __table_args__ = (
         db.PrimaryKeyConstraint('pedido_id', 'producto_id', name='pk_detalle_pedido'),
-        db.CheckConstraint('cantidad > 0', name='ck_detalle_pedido_cantidad_positiva'),
+        db.CheckConstraint('cantidad_comprada > 0', name='ck_detalle_pedido_cantidad_comprada_positiva'),
         db.CheckConstraint('precio_unitario >= 0', name='ck_detalle_pedido_precio_unitario_no_negativo'),
         db.Index('idx_detalle_pedido_producto_id', 'producto_id'),
     )
@@ -184,11 +185,11 @@ class DetallePedido(db.Model):
     @property
     def subtotal(self):
         # rounded half up to cents, the same rule the reports use in SQL
-        return (Decimal(self.cantidad) * Decimal(self.precio_unitario)).quantize(Decimal('0.01'), ROUND_HALF_UP)
+        return (Decimal(self.cantidad_comprada) * Decimal(self.precio_unitario)).quantize(Decimal('0.01'), ROUND_HALF_UP)
 
     @property
     def puntos(self):
-        return points_for(self.cantidad)
+        return points_for(self.cantidad_comprada)
 
     def to_dict(self):
         return {
@@ -196,7 +197,7 @@ class DetallePedido(db.Model):
             'producto_id': self.producto_id,
             'nombre_producto': self.producto.nombre,
             'unidad_medida': self.producto.unidad_medida,
-            'cantidad': money(self.cantidad),
+            'cantidad_comprada': money(self.cantidad_comprada),
             'precio_unitario': money(self.precio_unitario),
             'subtotal': money(self.subtotal),
             'puntos': self.puntos,
